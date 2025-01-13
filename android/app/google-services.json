@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "757456957598",
+    "project_id": "snapscore-cb7b4",
+    "storage_bucket": "snapscore-cb7b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757456957598:android:5fc5dea58d5fca889ccb8f",
+        "android_client_info": {
+          "package_name": "com.snapscore_tupv.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0Y8NObS_eQoZlro4TOH55MGoXFelSpL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
