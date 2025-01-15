@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'core/splash_screen.dart';
+import 'core/themes/app_theme.dart';
+import 'core/themes/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,10 +19,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text('Flutter Firebase Setup')),
-        body: Center(child: Text('Hello Firebase!')),
-      ),
+      theme: AppTheme.lightTheme,
+      home: const WelcomeScreen(),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(1.0)),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              textTheme: Theme.of(context).textTheme.apply(
+                    fontFamily: 'Poppins',
+                  ),
+            ),
+            child: child!,
+          ),
+        );
+      },
     );
   }
 }
