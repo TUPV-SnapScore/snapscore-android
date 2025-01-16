@@ -20,8 +20,11 @@ class LoginScreen extends StatelessWidget {
                 Align(
                   alignment: Alignment.topLeft,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back,
-                        color: AppColors.textPrimary),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.textPrimary,
+                      weight: 700,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: const EdgeInsets.all(0),
                   ),
