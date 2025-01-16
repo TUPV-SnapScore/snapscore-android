@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'core/splash_screen.dart';
+import 'core/home_screen.dart';
 import 'core/themes/app_theme.dart';
 import 'core/themes/colors.dart';
 
@@ -20,18 +20,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: AppTheme.lightTheme,
-      home: const WelcomeScreen(),
+      home: const HomeScreen(),
       builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: TextScaler.linear(1.0)),
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              textTheme: Theme.of(context).textTheme.apply(
-                    fontFamily: 'Poppins',
-                  ),
+        return Container(
+          color: AppColors.background,
+          child: MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(1.0)),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                textTheme: Theme.of(context).textTheme.apply(
+                      fontFamily: 'Poppins',
+                    ),
+              ),
+              child: child!,
             ),
-            child: child!,
           ),
         );
       },
