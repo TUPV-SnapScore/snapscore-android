@@ -21,6 +21,21 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
       'type': 'essay',
       'iconPath': 'assets/images/assessment_essay.png',
     },
+    {
+      'title': 'Sample Essay',
+      'type': 'essay',
+      'iconPath': 'assets/images/assessment_essay.png',
+    },
+    {
+      'title': 'Sample Essay',
+      'type': 'essay',
+      'iconPath': 'assets/images/assessment_essay.png',
+    },
+    {
+      'title': 'Sample Essay',
+      'type': 'essay',
+      'iconPath': 'assets/images/assessment_essay.png',
+    },
   ];
 
   List<Map<String, dynamic>> _filteredAssessments = [];
@@ -75,21 +90,28 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
             ),
           ),
         ),
+
         const SizedBox(height: 16),
+
         // Assessment List
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            children: _filteredAssessments.map((assessment) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: _AssessmentListItem(
-                  title: assessment['title'],
-                  iconPath: assessment['iconPath'],
-                  onTap: () {},
-                ),
-              );
-            }).toList(),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.50,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                children: _filteredAssessments.map((assessment) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: _AssessmentListItem(
+                      title: assessment['title'],
+                      iconPath: assessment['iconPath'],
+                      onTap: () {},
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ],
