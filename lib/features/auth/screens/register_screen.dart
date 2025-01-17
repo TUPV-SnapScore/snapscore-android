@@ -42,7 +42,7 @@ class RegisterScreen extends StatelessWidget {
                 const SizedBox(height: 4),
 
                 Text(
-                  "Glad to have you with us at DeGrader!\nLet's make your quiz checking easier.",
+                  "Glad to have you with us at SnapScore!\nLet's make your quiz checking easier.",
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,

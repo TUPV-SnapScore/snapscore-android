@@ -19,10 +19,10 @@ class WelcomeScreen extends StatelessWidget {
                   children: [
                     // DeGrader text
                     Text(
-                      'DeGrader',
+                      'SnapScore',
                       style:
                           Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                fontSize: 52,
+                                fontSize: 46,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.5,
                               ),
@@ -31,7 +31,7 @@ class WelcomeScreen extends StatelessWidget {
 
                     // Subtitle text
                     Text(
-                      'Your all-in-one AI grading solution.',
+                      'Snap it. Score it.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppColors.textSecondary, fontSize: 16),
                     ),

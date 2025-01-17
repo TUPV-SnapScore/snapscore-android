@@ -4,6 +4,7 @@ import 'firebase_options.dart';
 import 'core/home_screen.dart';
 import 'core/themes/app_theme.dart';
 import 'core/themes/colors.dart';
+import 'features/assessments/screens/assessments_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      home: const AssessmentScreen(),
       builder: (context, child) {
         return Container(
           color: AppColors.background,
