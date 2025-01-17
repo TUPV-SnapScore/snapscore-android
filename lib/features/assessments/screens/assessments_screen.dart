@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/colors.dart';
 import '../widgets/assessments_list.dart';
+import '../widgets/settings_popup.dart';
+import '../widgets/assessments_dialog.dart';
 
 class AssessmentScreen extends StatelessWidget {
   const AssessmentScreen({super.key});
@@ -15,7 +17,21 @@ class AssessmentScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.more_horiz),
-            onPressed: () {},
+            onPressed: () {
+              final RenderBox button = context.findRenderObject() as RenderBox;
+              final Offset offset = button.localToGlobal(Offset.zero);
+
+              final RelativeRect position = RelativeRect.fromLTRB(
+                MediaQuery.of(context).size.width - 200, // Position from right
+                offset.dy +
+                    AppBar().preferredSize.height +
+                    25, // Position below AppBar + 20 pixels
+                8, // Right padding
+                0,
+              );
+
+              showSettingsPopup(context, position);
+            },
           ),
         ],
       ),
@@ -57,11 +73,11 @@ class AssessmentScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => _showAssessmentTypeDialog(context),
+                  onPressed: () => showAssessmentTypeDialog(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                        vertical: 12), // reduced height
+                        vertical: 4), // reduced from 12 to 8
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                       side: const BorderSide(
@@ -78,121 +94,13 @@ class AssessmentScreen extends StatelessWidget {
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold, // made text bold
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAssessmentTypeDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierColor:
-          Colors.grey.withOpacity(0.2), // Semi-transparent dark background
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: Colors.transparent,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Type of Assessment',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: IntrinsicHeight(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _AssessmentTypeButton(
-                          title: 'Identification',
-                          iconPath: 'assets/images/assessment_test.png',
-                          onTap: () => Navigator.pop(context),
-                        ),
-                        const SizedBox(
-                          width: 16,
-                          height: 32,
-                        ),
-                        _AssessmentTypeButton(
-                          title: 'Essay',
-                          iconPath: 'assets/images/assessment_essay.png',
-                          onTap: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AssessmentTypeButton extends StatelessWidget {
-  final String title;
-  final String iconPath;
-  final VoidCallback onTap;
-
-  const _AssessmentTypeButton({
-    required this.title,
-    required this.iconPath,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 150, // Increased width
-        height: 160, // Fixed height for consistency
-        padding: const EdgeInsets.all(20), // Increased padding
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.black),
-        ),
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center, // Center content vertically
-          children: [
-            Image.asset(
-              iconPath,
-              height: 72, // Larger icon
-              width: 72,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 16), // More spacing
-            Text(
-              title,
-              style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14, // Larger text
-                  fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
