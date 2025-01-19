@@ -17,22 +17,22 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
       'iconPath': 'assets/images/assessment_test.png',
     },
     {
-      'title': 'Sample Essay',
+      'title': 'aaaa',
       'type': 'essay',
       'iconPath': 'assets/images/assessment_essay.png',
     },
     {
-      'title': 'Sample Essay',
+      'title': 'bbbb',
       'type': 'essay',
       'iconPath': 'assets/images/assessment_essay.png',
     },
     {
-      'title': 'Sample Essay',
+      'title': 'ccc',
       'type': 'essay',
       'iconPath': 'assets/images/assessment_essay.png',
     },
     {
-      'title': 'Sample Essay',
+      'title': 'd',
       'type': 'essay',
       'iconPath': 'assets/images/assessment_essay.png',
     },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/camera/widgets/camera.dart';
 import '../../../core/themes/colors.dart';
 import '../widgets/assessments_list.dart';
 import '../widgets/settings_popup.dart';
@@ -67,6 +68,43 @@ class AssessmentScreen extends StatelessWidget {
             // Search Bar
             const AssessmentSearchWidget(),
 
+            // Camera Button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CameraScreen()),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: const BorderSide(color: Colors.black, width: 1),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.camera_alt, color: AppColors.textSecondary),
+                      SizedBox(width: 8),
+                      Text(
+                        'Open Camera',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             // New Assessment Button
             Padding(
               padding: const EdgeInsets.all(16.0),
