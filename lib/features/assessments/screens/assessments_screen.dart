@@ -77,7 +77,7 @@ class AssessmentScreen extends StatelessWidget {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const CameraScreen()),
+                        builder: (context) => const RegularCamera()),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
