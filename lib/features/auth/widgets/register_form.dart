@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snapscore_android/features/assessments/screens/assessments_screen.dart';
 import '../../../core/themes/colors.dart';
+import '../../../core/providers/auth_provider.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -10,8 +13,94 @@ class RegisterForm extends StatefulWidget {
 
 class _RegisterFormState extends State<RegisterForm> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.registerWithEmailPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _nameController.text.trim(),
+      );
+
+      // Check if widget is still mounted before using context
+      if (!mounted) return;
+
+      // Navigate to the AssessmentScreen (without having a back button or something)
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const AssessmentScreen()),
+        (route) =>
+            false, // This predicate returning false removes all previous routes
+      );
+      // Successfully registered - AuthWrapper will handle navigation
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _getErrorMessage(e.toString()),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.signInWithGoogle();
+      // Successfully logged in - AuthWrapper will handle navigation
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _getErrorMessage(e.toString()),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _getErrorMessage(String error) {
+    if (error.contains('email-already-in-use')) {
+      return 'An account already exists with this email.';
+    } else if (error.contains('invalid-email')) {
+      return 'Please provide a valid email address.';
+    } else if (error.contains('weak-password')) {
+      return 'Password is too weak. Please use a stronger password.';
+    } else if (error.contains('operation-not-allowed')) {
+      return 'Email/password accounts are not enabled. Please contact support.';
+    }
+    return 'An error occurred. Please try again.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +110,7 @@ class _RegisterFormState extends State<RegisterForm> {
         children: [
           // Name Field
           TextFormField(
+            controller: _nameController,
             decoration: InputDecoration(
               hintText: 'Enter your full name',
               border: OutlineInputBorder(
@@ -47,12 +137,22 @@ class _RegisterFormState extends State<RegisterForm> {
               filled: true,
               fillColor: Colors.white,
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your name';
+              }
+              if (value.length < 2) {
+                return 'Name must be at least 2 characters';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 16),
 
           // Email Field
           TextFormField(
+            controller: _emailController,
             decoration: InputDecoration(
               hintText: 'Enter your email',
               border: OutlineInputBorder(
@@ -80,12 +180,23 @@ class _RegisterFormState extends State<RegisterForm> {
               fillColor: Colors.white,
             ),
             keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your email';
+              }
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value)) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 16),
 
           // Password Field
           TextFormField(
+            controller: _passwordController,
             decoration: InputDecoration(
               hintText: 'Enter password',
               border: OutlineInputBorder(
@@ -124,12 +235,22 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
             ),
             obscureText: _obscurePassword,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a password';
+              }
+              if (value.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 16),
 
           // Confirm Password Field
           TextFormField(
+            controller: _confirmPasswordController,
             decoration: InputDecoration(
               hintText: 'Confirm password',
               border: OutlineInputBorder(
@@ -170,9 +291,18 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
             ),
             obscureText: _obscureConfirmPassword,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please confirm your password';
+              }
+              if (value != _passwordController.text) {
+                return 'Passwords do not match';
+              }
+              return null;
+            },
           ),
 
-          const SizedBox(height: 4), // Changed from 24 to 16
+          const SizedBox(height: 4),
 
           // Social Login Icons
           Row(
@@ -184,28 +314,33 @@ class _RegisterFormState extends State<RegisterForm> {
 
           // Register Button
           SizedBox(
-            width: 240, // Reduced from double.infinity
+            width: 240,
             height: 56,
             child: ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  // Handle registration
-                }
-              },
+              onPressed: _isLoading ? null : _handleRegister,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Register',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      // Changed from bodyLarge
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.bold,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'Register',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
-              ),
             ),
           ),
         ],
@@ -222,9 +357,7 @@ class _RegisterFormState extends State<RegisterForm> {
           width: 64,
           height: 64,
         ),
-        onPressed: () {
-          // Handle social login
-        },
+        onPressed: _isLoading ? null : _handleGoogleSignIn,
       ),
     );
   }

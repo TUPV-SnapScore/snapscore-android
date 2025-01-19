@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snapscore_android/features/assessments/screens/assessments_screen.dart';
 import '../../../core/themes/colors.dart';
+import '../../../core/providers/auth_provider.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -10,7 +13,88 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.signInWithEmailPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      // Check if widget is still mounted before using context
+      if (!mounted) return;
+
+      // Navigate to the AssessmentScreen (without having a back button or something)
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const AssessmentScreen()),
+        (route) =>
+            false, // This predicate returning false removes all previous routes
+      );
+      // Successfully registered - AuthWrapper will handle navigation
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _getErrorMessage(e.toString()),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.signInWithGoogle();
+      // Successfully logged in - AuthWrapper will handle navigation
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _getErrorMessage(e.toString()),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _getErrorMessage(String error) {
+    if (error.contains('user-not-found')) {
+      return 'No user found with this email.';
+    } else if (error.contains('wrong-password')) {
+      return 'Wrong password provided.';
+    } else if (error.contains('invalid-email')) {
+      return 'The email address is badly formatted.';
+    } else if (error.contains('user-disabled')) {
+      return 'This user account has been disabled.';
+    }
+    return 'An error occurred. Please try again.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +104,7 @@ class _LoginFormState extends State<LoginForm> {
         children: [
           // Email Field
           TextFormField(
+            controller: _emailController,
             decoration: InputDecoration(
               hintText: 'Enter your email',
               border: OutlineInputBorder(
@@ -47,12 +132,23 @@ class _LoginFormState extends State<LoginForm> {
               fillColor: Colors.white,
             ),
             keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your email';
+              }
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value)) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 16),
 
           // Password Field
           TextFormField(
+            controller: _passwordController,
             decoration: InputDecoration(
               hintText: 'Enter your password',
               border: OutlineInputBorder(
@@ -91,6 +187,15 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
             obscureText: _obscurePassword,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your password';
+              }
+              if (value.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 4),
@@ -104,9 +209,7 @@ class _LoginFormState extends State<LoginForm> {
                 width: 64,
                 height: 64,
               ),
-              onPressed: () {
-                // Handle Google sign in
-              },
+              onPressed: _isLoading ? null : _handleGoogleSignIn,
             ),
           ),
 
@@ -115,28 +218,32 @@ class _LoginFormState extends State<LoginForm> {
             width: 240,
             height: 56,
             child: ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  // Handle login
-                }
-              },
+              onPressed: _isLoading ? null : _handleLogin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Log In',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.bold,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'Log In',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
-              ),
             ),
           ),
-
-          // Forgot Password
         ],
       ),
     );
