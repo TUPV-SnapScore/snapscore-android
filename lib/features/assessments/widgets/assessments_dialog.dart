@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/essays/screens/new_essay_screen.dart';
+import 'package:snapscore_android/features/identification/screens/identification_screen.dart';
 import '../../../core/themes/colors.dart';
 
 void showAssessmentTypeDialog(BuildContext context) {
@@ -36,7 +38,14 @@ void showAssessmentTypeDialog(BuildContext context) {
                       _AssessmentTypeButton(
                         title: 'Identification',
                         iconPath: 'assets/images/assessment_test.png',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => {
+                          Navigator.pop(context),
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NewIdentificationScreen()))
+                        },
                       ),
                       const SizedBox(
                         width: 16,
@@ -45,7 +54,13 @@ void showAssessmentTypeDialog(BuildContext context) {
                       _AssessmentTypeButton(
                         title: 'Essay',
                         iconPath: 'assets/images/assessment_essay.png',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => {
+                          Navigator.pop(context),
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const NewEssayScreen()))
+                        },
                       ),
                     ],
                   ),
