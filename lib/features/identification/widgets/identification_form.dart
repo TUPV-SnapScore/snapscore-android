@@ -116,53 +116,65 @@ class _IdentificationFormState extends State<IdentificationForm> {
             _buildFormLabel('Assessment Name:'),
             _buildTextField(
               hintText: 'Input quiz name',
-              prefixIcon: Icons.edit,
+              prefixIcon: "assets/icons/rubric_item.png",
               controller: titleController,
             ),
             const SizedBox(height: 20),
             Row(
               children: [
-                Icon(
-                  Icons.question_answer,
-                  color: AppColors.textSecondary,
-                  size: 20,
+                Expanded(
+                  child: Row(
+                    children: [
+                      ImageIcon(
+                        const AssetImage("assets/icons/rubric_item.png"),
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Pick Number of Questions:',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 16,
+                          ),
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Pick Number of Questions:',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 16,
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Colors.black),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<int>(
+                      value: selectedQuestions,
+                      isExpanded: true,
+                      underline: const SizedBox(),
+                      items: questionOptions.map((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text(value.toString()),
+                        );
+                      }).toList(),
+                      onChanged: (int? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedQuestions = newValue;
+                            _initializeAnswerControllers(newValue);
+                          });
+                        }
+                      },
+                    ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButton<int>(
-                value: selectedQuestions,
-                isExpanded: true,
-                underline: const SizedBox(),
-                items: questionOptions.map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text(value.toString()),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      selectedQuestions = newValue;
-                      _initializeAnswerControllers(newValue);
-                    });
-                  }
-                },
-              ),
             ),
             const SizedBox(height: 20),
             _buildFormLabel('Answer Key:'),
@@ -185,7 +197,7 @@ class _IdentificationFormState extends State<IdentificationForm> {
                           Expanded(
                             child: _buildTextField(
                               hintText: 'Answer ${index + 1}',
-                              prefixIcon: Icons.edit,
+                              prefixIcon: "assets/icons/rubric_item.png",
                               controller: answerControllers[index],
                             ),
                           ),
@@ -200,7 +212,7 @@ class _IdentificationFormState extends State<IdentificationForm> {
 
   Widget _buildFormLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 4, left: 40),
       child: Text(
         label,
         style: TextStyle(
@@ -213,14 +225,15 @@ class _IdentificationFormState extends State<IdentificationForm> {
 
   Widget _buildTextField({
     required String hintText,
-    required IconData prefixIcon,
+    required String prefixIcon, // Changed to String for image asset
     IconData? suffixIcon,
     bool enabled = true,
     TextEditingController? controller,
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
+        color: Colors.white,
+        border: Border.all(color: Colors.black),
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextField(
@@ -232,7 +245,10 @@ class _IdentificationFormState extends State<IdentificationForm> {
             color: AppColors.textSecondary,
             fontSize: 16,
           ),
-          prefixIcon: Icon(prefixIcon, color: AppColors.textSecondary),
+          prefixIcon: ImageIcon(
+            AssetImage(prefixIcon),
+            color: AppColors.textSecondary,
+          ),
           suffixIcon: suffixIcon != null
               ? Icon(suffixIcon, color: AppColors.textSecondary)
               : null,

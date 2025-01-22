@@ -63,12 +63,13 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
+        centerTitle: true,
         title: const Text(
           'SnapScore',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
@@ -86,9 +87,9 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
             child: Text(
               'Identification',
               style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+                  color: AppColors.textSecondary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
@@ -109,17 +110,17 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _BottomButton(
-                  icon: Icons.save,
+                  imagePath: "assets/icons/assessment_save.png",
                   label: 'Save',
                   onPressed: _handleSave,
                 ),
                 _BottomButton(
-                  icon: Icons.camera_alt,
+                  imagePath: "assets/icons/assessment_scan.png",
                   label: 'Scan',
                   onPressed: () {},
                 ),
                 _BottomButton(
-                  icon: Icons.assessment,
+                  imagePath: "assets/icons/assessment_results.png",
                   label: 'Results',
                   onPressed: () {},
                 ),
@@ -133,12 +134,12 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
 }
 
 class _BottomButton extends StatelessWidget {
-  final IconData icon;
+  final String imagePath;
   final String label;
   final VoidCallback onPressed;
 
   const _BottomButton({
-    required this.icon,
+    required this.imagePath,
     required this.label,
     required this.onPressed,
   });
@@ -150,13 +151,31 @@ class _BottomButton extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.textPrimary),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 12,
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: Colors.black,
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Image.asset(
+                  imagePath,
+                  width: 24,
+                  height: 24,
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
