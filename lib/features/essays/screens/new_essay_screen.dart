@@ -60,20 +60,23 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back,
+              color: AppColors.textPrimary, weight: 700),
           onPressed: () => Navigator.pop(context),
         ),
+        centerTitle: true,
         title: const Text(
           'SnapScore',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 20,
+            fontSize: 24,
             fontWeight: FontWeight.w600,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
+            icon: const Icon(Icons.more_horiz,
+                color: AppColors.textPrimary, weight: 700),
             onPressed: () {},
           ),
         ],
@@ -82,13 +85,13 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
+            padding: EdgeInsets.symmetric(vertical: 4.0),
             child: Text(
               'Essay',
               style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+                  color: AppColors.textSecondary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
@@ -102,26 +105,33 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
             decoration: BoxDecoration(
               color: AppColors.background,
               border: Border(
-                top: BorderSide(color: AppColors.border),
+                top: BorderSide(color: AppColors.textSecondary),
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _BottomButton(
-                  icon: Icons.save,
-                  label: 'Save',
-                  onPressed: _handleSave,
+                Expanded(
+                  child: _BottomButton(
+                    imagePath: "assets/icons/assessment_save.png",
+                    label: 'Save',
+                    onPressed: _handleSave,
+                  ),
                 ),
-                _BottomButton(
-                  icon: Icons.camera_alt,
-                  label: 'Scan',
-                  onPressed: () {},
+                Expanded(
+                  child: _BottomButton(
+                    imagePath: "assets/icons/assessment_scan.png",
+                    label: 'Scan',
+                    onPressed: () {},
+                  ),
                 ),
-                _BottomButton(
-                  icon: Icons.assessment,
-                  label: 'Results',
-                  onPressed: () {},
+                Expanded(
+                  child: _BottomButton(
+                    imagePath: "assets/icons/assessment_results.png",
+                    label: 'Results',
+                    onPressed: () {},
+                  ),
                 ),
               ],
             ),
@@ -133,12 +143,12 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
 }
 
 class _BottomButton extends StatelessWidget {
-  final IconData icon;
+  final String imagePath;
   final String label;
   final VoidCallback onPressed;
 
   const _BottomButton({
-    required this.icon,
+    required this.imagePath,
     required this.label,
     required this.onPressed,
   });
@@ -150,13 +160,31 @@ class _BottomButton extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.textPrimary),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 12,
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: Colors.black,
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Image.asset(
+                  imagePath,
+                  width: 24,
+                  height: 24,
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
