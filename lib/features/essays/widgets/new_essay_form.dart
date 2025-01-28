@@ -189,53 +189,59 @@ class _NewEssayFormState extends State<NewEssayForm> {
             _buildFormLabel('Essay Name:'),
             _buildTextField(
               hintText: 'Input essay title',
-              prefixIcon: Icons.edit,
+              prefixIconAsset: "assets/icons/rubric_item.png",
               controller: titleController,
             ),
             const SizedBox(height: 20),
             Row(
               children: [
-                Icon(
-                  Icons.question_answer,
+                Image.asset(
+                  "assets/icons/rubric_item.png",
+                  width: 20,
+                  height: 20,
                   color: AppColors.textSecondary,
-                  size: 20,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Pick Number of Questions:',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 16,
+                Expanded(
+                  child: Text(
+                    'Pick Number of Questions:',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Colors.black),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<int>(
+                      value: selectedQuestions,
+                      isExpanded: true,
+                      underline: const SizedBox(),
+                      items: questionOptions.map((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text(value.toString()),
+                        );
+                      }).toList(),
+                      onChanged: (int? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedQuestions = newValue;
+                            updateQuestionFields(newValue);
+                          });
+                        }
+                      },
+                    ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButton<int>(
-                value: selectedQuestions,
-                isExpanded: true,
-                underline: const SizedBox(),
-                items: questionOptions.map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text(value.toString()),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      selectedQuestions = newValue;
-                      updateQuestionFields(newValue);
-                    });
-                  }
-                },
-              ),
             ),
             const SizedBox(height: 20),
             _buildFormLabel('Essay Questions:'),
@@ -255,7 +261,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
                         const SizedBox(height: 8),
                         _buildTextField(
                           hintText: 'Input question ${index + 1}',
-                          prefixIcon: Icons.edit,
+                          prefixIconAsset: "assets/icons/rubric_item.png",
                           controller: questionControllers[index],
                         ),
                       ],
@@ -274,16 +280,14 @@ class _NewEssayFormState extends State<NewEssayForm> {
                               flex: 3,
                               child: _buildTextField(
                                 hintText: 'Input essay criteria',
-                                prefixIcon: Icons.edit,
+                                prefixIconAsset: "assets/icons/rubric_item.png",
                                 controller: criteriaControllers[index],
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Expanded(
                               flex: 1,
                               child: _buildTextField(
                                 hintText: 'Score',
-                                prefixIcon: Icons.score,
                                 controller: criteriaScoreControllers[index],
                                 keyboardType: TextInputType.number,
                                 onChanged: (_) => updateTotalScore(),
@@ -305,26 +309,43 @@ class _NewEssayFormState extends State<NewEssayForm> {
             if (criteriaControllers.length < 5)
               TextButton(
                 onPressed: addCriteria,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add, color: AppColors.textSecondary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Insert additional essay criteria',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 16,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize:
+                      const Size.fromHeight(50), // Makes button take full width
+                ),
+                child: Container(
+                  width: double.infinity, // Makes container take full width
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.start, // Centers the content
+                    children: [
+                      Icon(Icons.add, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Insert additional essay criteria',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold, // Makes text bold
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             const SizedBox(height: 20),
             _buildFormLabel('Total Score:'),
             _buildTextField(
               hintText: 'Total Score',
-              prefixIcon: Icons.score,
+              prefixIconAsset: "assets/icons/rubric_item.png",
               enabled: false,
               controller: TextEditingController(
                 text: criteriaScoreControllers
@@ -342,12 +363,13 @@ class _NewEssayFormState extends State<NewEssayForm> {
 
   Widget _buildFormLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 8, left: 32),
       child: Text(
         label,
         style: TextStyle(
           color: AppColors.textSecondary,
           fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -355,7 +377,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
 
   Widget _buildTextField({
     required String hintText,
-    required IconData prefixIcon,
+    String? prefixIconAsset, // Changed to String for asset path
     IconData? suffixIcon,
     bool enabled = true,
     TextEditingController? controller,
@@ -364,7 +386,8 @@ class _NewEssayFormState extends State<NewEssayForm> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
+        color: Colors.white,
+        border: Border.all(color: Colors.black),
         borderRadius: BorderRadius.circular(8),
       ),
       child: TextField(
@@ -378,7 +401,12 @@ class _NewEssayFormState extends State<NewEssayForm> {
             color: AppColors.textSecondary,
             fontSize: 16,
           ),
-          prefixIcon: Icon(prefixIcon, color: AppColors.textSecondary),
+          prefixIcon: prefixIconAsset != null
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Image.asset(prefixIconAsset),
+                )
+              : null,
           suffixIcon: suffixIcon != null
               ? Icon(suffixIcon, color: AppColors.textSecondary)
               : null,
