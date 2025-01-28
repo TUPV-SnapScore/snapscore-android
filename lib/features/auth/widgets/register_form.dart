@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:snapscore_android/features/assessments/screens/assessments_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../helpers/api_service_helper.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -30,12 +31,24 @@ class _RegisterFormState extends State<RegisterForm> {
     super.dispose();
   }
 
+  // register_screen.dart or wherever your _handleRegister is located
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
+      final apiService = ApiService();
+
+      // Make the API call
+      await apiService.register(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        fullName: _nameController.text.trim(),
+      );
+
+      // Update auth provider
+      // ignore: use_build_context_synchronously
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.registerWithEmailPassword(
         _emailController.text.trim(),
@@ -43,17 +56,14 @@ class _RegisterFormState extends State<RegisterForm> {
         _nameController.text.trim(),
       );
 
-      // Check if widget is still mounted before using context
       if (!mounted) return;
 
-      // Navigate to the AssessmentScreen (without having a back button or something)
+      // Navigate to the AssessmentScreen
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const AssessmentScreen()),
-        (route) =>
-            false, // This predicate returning false removes all previous routes
+        (route) => false,
       );
-      // Successfully registered - AuthWrapper will handle navigation
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,10 +82,24 @@ class _RegisterFormState extends State<RegisterForm> {
     setState(() => _isLoading = true);
 
     try {
+      // First, handle Google authentication
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signInWithGoogle();
-      // Successfully logged in - AuthWrapper will handle navigation
+      final googleUserCredential = await authProvider.signInWithGoogle();
+
+      // Get the user information from Google
+      final googleUser = googleUserCredential?.user;
+      if (googleUser != null && googleUser.email != null) {
+        // Create user in your backend
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        await apiService.googleSignIn(
+          email: googleUser.email!,
+          fullName: googleUser.displayName ?? 'Google User',
+        );
+      }
+
+      // AuthWrapper will handle navigation
     } catch (e) {
+      print(e);
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

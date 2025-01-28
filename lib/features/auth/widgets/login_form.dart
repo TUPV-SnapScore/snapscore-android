@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:snapscore_android/features/assessments/screens/assessments_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../helpers/api_service_helper.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -66,9 +67,22 @@ class _LoginFormState extends State<LoginForm> {
     setState(() => _isLoading = true);
 
     try {
+      // First, handle Google authentication
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signInWithGoogle();
-      // Successfully logged in - AuthWrapper will handle navigation
+      final googleUserCredential = await authProvider.signInWithGoogle();
+
+      // Get the user information from Google
+      final googleUser = googleUserCredential?.user;
+      if (googleUser != null && googleUser.email != null) {
+        // Create user in your backend
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        await apiService.googleSignIn(
+          email: googleUser.email!,
+          fullName: googleUser.displayName ?? 'Google User',
+        );
+      }
+
+      // AuthWrapper will handle navigation
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(

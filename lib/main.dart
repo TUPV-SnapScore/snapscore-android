@@ -8,12 +8,14 @@ import 'features/assessments/screens/assessments_screen.dart';
 import 'core/screens/splash_screen.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/router/auth_wrapper.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await dotenv.load(fileName: '.env');
   runApp(const MyApp());
 }
 

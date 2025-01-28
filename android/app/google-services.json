@@ -12,7 +12,20 @@
           "package_name": "com.snapscore_tupv.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "757456957598-i1ovpddcsb8u5q7ops6b163vtf6afefd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.snapscore_tupv.app",
+            "certificate_hash": "e8debfe40adce98c386623acee2af5add691ce9d"
+          }
+        },
+        {
+          "client_id": "757456957598-lb8u66gir182egqlp74i9vj858gapo15.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA0Y8NObS_eQoZlro4TOH55MGoXFelSpL0"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "757456957598-lb8u66gir182egqlp74i9vj858gapo15.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "757456957598-7cgu3t72ochorkajlmjbfmf7mgjakqlq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.snapscoreAndroid"
+              }
+            }
+          ]
         }
       }
     }
