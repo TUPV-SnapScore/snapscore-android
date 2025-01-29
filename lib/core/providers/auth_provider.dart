@@ -10,7 +10,6 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider() {
     // Listen to Firebase auth state changes
     _authService.authStateChanges.listen((User? user) {
-      print("Auth state changed: ${user?.email}"); // Add this for debugging
       _user = user;
       _isLoading = false;
       notifyListeners();

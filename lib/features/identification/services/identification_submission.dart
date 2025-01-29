@@ -3,21 +3,21 @@ import 'dart:convert';
 import '../models/identification_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class AssessmentService {
+class IdentificationService {
   final String baseUrl;
 
-  AssessmentService() : baseUrl = dotenv.get('API_URL');
+  IdentificationService() : baseUrl = dotenv.get('API_URL');
 
-  Future<Map<String, dynamic>> _createIdentificationQuestions(
-      {required IdentificationAnswer question,
+  Future<Map<String, dynamic>> _createIdentificationanswers(
+      {required IdentificationAnswer answer,
       required String assessmentId}) async {
     try {
       final response =
           await http.post(Uri.parse('$baseUrl/identification-assessment'),
               headers: {'Content-Type': 'application/json'},
               body: jsonEncode({
-                'question': question.number,
-                'answer': question.answer,
+                'question': answer.number,
+                'correctAnswer': answer.answer,
                 'assessmentId': assessmentId
               }));
 
@@ -25,31 +25,31 @@ class AssessmentService {
     } catch (e) {
       return {
         'error': true,
-        'message': 'Failed creating identification questions'
+        'message': 'Failed creating identification answers'
       };
     }
   }
 
-  Future<Map<String, dynamic>> createAssessment({
-    required String assessmentName,
-    required List<IdentificationAnswer> questions,
-  }) async {
+  Future<Map<String, dynamic>> createAssessment(
+      {required String assessmentName,
+      required List<IdentificationAnswer> answers,
+      required String userId}) async {
     try {
       final response = await http.post(
           Uri.parse('$baseUrl/identification-assessment'),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'name': assessmentName}));
+          body: jsonEncode({'name': assessmentName, 'userId': userId}));
 
       final data = jsonDecode(response.body);
 
-      if (!data) {
-        throw Error();
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Failed to create assessment: ${data['message']}');
       }
 
       final assessmentId = data['id'];
-      for (var question in questions) {
-        await _createIdentificationQuestions(
-            question: question, assessmentId: assessmentId);
+      for (var answer in answers) {
+        await _createIdentificationanswers(
+            answer: answer, assessmentId: assessmentId);
       }
 
       return jsonDecode(response.body);

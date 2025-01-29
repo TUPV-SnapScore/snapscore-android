@@ -78,6 +78,7 @@ class _LoginFormState extends State<LoginForm> {
         final apiService = Provider.of<ApiService>(context, listen: false);
         await apiService.googleSignIn(
           email: googleUser.email!,
+          userId: googleUser.uid,
           fullName: googleUser.displayName ?? 'Google User',
         );
       }

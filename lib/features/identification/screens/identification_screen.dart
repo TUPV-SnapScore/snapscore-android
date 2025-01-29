@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snapscore_android/core/providers/auth_provider.dart';
+import 'package:snapscore_android/features/identification/models/identification_model.dart';
+import 'package:snapscore_android/features/identification/services/identification_submission.dart';
 import '../../../core/themes/colors.dart';
 import '../widgets/identification_form.dart';
+
+class IdentificationFormData {
+  final String assessmentName;
+  final List<IdentificationAnswer> answers;
+
+  IdentificationFormData({
+    required this.assessmentName,
+    required this.answers,
+  });
+}
 
 class NewIdentificationScreen extends StatefulWidget {
   const NewIdentificationScreen({super.key});
@@ -33,24 +47,44 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
   }
 
   Future<void> _handleFormSubmit(Map<String, dynamic> data) async {
-    // Here you would typically make your HTTP request
-    // Example:
-    // final response = await http.post(
-    //   Uri.parse('your-api-endpoint'),
-    //   body: jsonEncode(data),
-    //   headers: {'Content-Type': 'application/json'},
-    // );
+    try {
+      final service = IdentificationService();
+      String? userId =
+          Provider.of<AuthProvider>(context, listen: false).user?.uid;
 
-    // For now, just print the data
-    print('Submitting data: $data');
+      // Convert the raw answers data to IdentificationAnswer objects
+      final answers = (data['answers'] as List<dynamic>).map((answer) {
+        return IdentificationAnswer(
+          number: answer['number'] as int,
+          answer: answer['answer'] as String,
+        );
+      }).toList();
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
+      final formData = IdentificationFormData(
+        assessmentName: data['assessmentName'] as String,
+        answers: answers,
+      );
 
-    // You can throw an error here if the API call fails
-    // if (response.statusCode != 200) {
-    //   throw Exception('Failed to save assessment');
-    // }
+      final result = await service.createAssessment(
+        assessmentName: formData.assessmentName,
+        answers: formData.answers,
+        userId: userId!,
+      );
+
+      print(result);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Assessment created successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving assessment: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override

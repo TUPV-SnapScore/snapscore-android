@@ -8,18 +8,17 @@ class ApiService {
 
   ApiService() : baseUrl = dotenv.get('API_URL');
 
-  Future<Map<String, dynamic>> register({
-    required String email,
-    required String password,
-    required String fullName,
-  }) async {
+  Future<Map<String, dynamic>> register(
+      {required String email,
+      required String userId,
+      required String fullName}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/users'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
-          'password': password,
+          'firebaseId': userId,
           'fullName': fullName,
         }),
       );
@@ -36,17 +35,25 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> googleSignIn({
-    required String email,
-    required String fullName,
-  }) async {
+  Future<Map<String, dynamic>> googleSignIn(
+      {required String email,
+      required String fullName,
+      required String userId}) async {
     try {
+      final existingUser = await http.get(
+        Uri.parse('$baseUrl/users/firebase/$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (existingUser.statusCode == 200) {
+        return jsonDecode(existingUser.body);
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/users'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
-          'password': 'N/A', // As discussed, using N/A for Google sign-ins
           'fullName': fullName,
         }),
       );

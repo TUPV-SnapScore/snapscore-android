@@ -40,13 +40,6 @@ class _RegisterFormState extends State<RegisterForm> {
     try {
       final apiService = ApiService();
 
-      // Make the API call
-      await apiService.register(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        fullName: _nameController.text.trim(),
-      );
-
       // Update auth provider
       // ignore: use_build_context_synchronously
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -57,6 +50,20 @@ class _RegisterFormState extends State<RegisterForm> {
       );
 
       if (!mounted) return;
+
+      final userId =
+          Provider.of<AuthProvider>(context, listen: false).user?.uid ?? '';
+
+      if (userId.isEmpty) {
+        throw Exception('Failed to get user ID');
+      }
+
+      // Make the API call
+      await apiService.register(
+        email: _emailController.text.trim(),
+        fullName: _nameController.text.trim(),
+        userId: userId,
+      );
 
       // Navigate to the AssessmentScreen
       Navigator.pushAndRemoveUntil(
@@ -93,6 +100,7 @@ class _RegisterFormState extends State<RegisterForm> {
         final apiService = Provider.of<ApiService>(context, listen: false);
         await apiService.googleSignIn(
           email: googleUser.email!,
+          userId: googleUser.uid,
           fullName: googleUser.displayName ?? 'Google User',
         );
       }
