@@ -35,6 +35,29 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getUserByFirebaseId({
+    required String userId,
+  }) async {
+    try {
+      print('Fetching user by Firebase ID: $userId');
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/firebase/$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to get user: ${response.body}');
+      }
+    } catch (e) {
+      print(e);
+      throw Exception('Failed to get user: ${e.toString()}');
+    }
+  }
+
   Future<Map<String, dynamic>> googleSignIn({
     required String email,
     required String fullName,

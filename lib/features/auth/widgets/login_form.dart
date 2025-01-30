@@ -86,9 +86,6 @@ class _LoginFormState extends State<LoginForm> {
         // Store the MongoDB user ID in the AuthProvider
         authProvider.setUserId(
             userData['id']); // Assuming '_id' is the MongoDB ID field
-
-        // Force refresh the auth state
-        await authProvider.refreshAuthState();
       }
 
       AuthWrapper.forceAuthenticatedRoute(context);
