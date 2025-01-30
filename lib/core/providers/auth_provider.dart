@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   User? _user;
+  String? _userId; // MongoDB user ID
   bool _isLoading = true;
 
   AuthProvider() {
@@ -15,7 +16,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     });
   }
-  // Add these methods to expose authentication functionality
+
   Future<UserCredential> signInWithEmailPassword(
       String email, String password) async {
     return await _authService.signInWithEmailPassword(email, password);
@@ -32,6 +33,8 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _authService.signOut();
+    _userId = null; // Clear MongoDB user ID on sign out
+    notifyListeners();
   }
 
   Future<void> refreshAuthState() async {
@@ -43,7 +46,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // New method to set MongoDB user ID
+  void setUserId(String id) {
+    _userId = id;
+    notifyListeners();
+  }
+
   User? get user => _user;
+  String? get userId => _userId; // Getter for MongoDB user ID
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
 }

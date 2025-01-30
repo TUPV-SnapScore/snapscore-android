@@ -60,11 +60,13 @@ class _RegisterFormState extends State<RegisterForm> {
       }
 
       // Make the API call
-      await apiService.register(
+      final userData = await apiService.register(
         email: _emailController.text.trim(),
         fullName: _nameController.text.trim(),
         userId: userId,
       );
+
+      authProvider.setUserId(userData['id']);
 
       // Navigate to the AssessmentScreen
       Navigator.pushAndRemoveUntil(
@@ -99,19 +101,21 @@ class _RegisterFormState extends State<RegisterForm> {
       if (googleUser != null && googleUser.email != null) {
         // Create user in your backend
         final apiService = ApiService();
-        await apiService.googleSignIn(
+        final userData = await apiService.googleSignIn(
           email: googleUser.email!,
           userId: googleUser.uid,
           fullName: googleUser.displayName ?? 'Google User',
         );
+
+        // Store the MongoDB user ID in the AuthProvider
+        authProvider.setUserId(
+            userData['id']); // Assuming '_id' is the MongoDB ID field
 
         // Force refresh the auth state
         await authProvider.refreshAuthState();
       }
 
       AuthWrapper.forceAuthenticatedRoute(context);
-
-      // AuthWrapper will handle navigation
     } catch (e) {
       setState(() => _isLoading = false);
       print(e);

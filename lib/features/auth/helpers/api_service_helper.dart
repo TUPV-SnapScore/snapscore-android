@@ -47,8 +47,6 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('Existing user response: ${existingUserResponse.body}');
-
       // If user exists and response is valid JSON, return it
       if (existingUserResponse.statusCode == 200 &&
           existingUserResponse.body.isNotEmpty) {
@@ -65,8 +63,6 @@ class ApiService {
           'firebaseId': userId, // Added this field
         }),
       );
-
-      print('Create user response: ${createUserResponse.body}');
 
       if (createUserResponse.statusCode == 201 ||
           createUserResponse.statusCode == 200) {
