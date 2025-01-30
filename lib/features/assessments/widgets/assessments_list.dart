@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snapscore_android/core/providers/auth_provider.dart';
+import 'package:snapscore_android/features/assessments/models/assessment_model.dart';
+import 'package:snapscore_android/features/assessments/services/assessments_service.dart';
+import 'package:snapscore_android/features/identification/screens/edit_identification_screen.dart';
 import '../../../core/themes/colors.dart';
 
 class AssessmentSearchWidget extends StatefulWidget {
@@ -10,47 +15,101 @@ class AssessmentSearchWidget extends StatefulWidget {
 
 class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, dynamic>> _sampleAssessments = [
-    {
-      'title': 'Sample Test',
-      'type': 'test',
-      'iconPath': 'assets/images/assessment_test.png',
-    },
-    {
-      'title': 'aaaa',
-      'type': 'essay',
-      'iconPath': 'assets/images/assessment_essay.png',
-    },
-    {
-      'title': 'bbbb',
-      'type': 'essay',
-      'iconPath': 'assets/images/assessment_essay.png',
-    },
-    {
-      'title': 'ccc',
-      'type': 'essay',
-      'iconPath': 'assets/images/assessment_essay.png',
-    },
-    {
-      'title': 'd',
-      'type': 'essay',
-      'iconPath': 'assets/images/assessment_essay.png',
-    },
-  ];
+  final AssessmentsService _assessmentsService = AssessmentsService();
 
+  List<Map<String, dynamic>> _assessments = [];
   List<Map<String, dynamic>> _filteredAssessments = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _filteredAssessments = _sampleAssessments;
+    // Delay the loading to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAssessments();
+    });
+  }
+
+  Future<void> _loadAssessments() async {
+    if (!mounted) return;
+
+    setState(() => _isLoading = true);
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Wait for auth to be initialized
+    while (authProvider.isLoading) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+    }
+
+    final mongoDbUserId = authProvider.userId;
+
+    if (mongoDbUserId != null) {
+      try {
+        final essayAssessments =
+            await _assessmentsService.getEssayAssessments(mongoDbUserId);
+        print('Essay assessments: $essayAssessments');
+        final identificationAssessments = await _assessmentsService
+            .getIdentificationAssessments(mongoDbUserId);
+        print('Identification assessments: $identificationAssessments');
+
+        if (!mounted) return;
+
+        print("assessments $identificationAssessments");
+
+        setState(() {
+          _assessments = [
+            ...essayAssessments.map((e) => {
+                  'title': e.name,
+                  'type': 'essay',
+                  'data': e,
+                }),
+            ...identificationAssessments.map((i) => {
+                  'title': i.name,
+                  'type': 'identification',
+                  'data': i,
+                }),
+          ];
+          _filteredAssessments = _assessments;
+          _isLoading = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+
+        setState(() {
+          _isLoading = false;
+          _assessments = [];
+          _filteredAssessments = [];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Failed to load assessments. Please try again later.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        print('Error loading assessments: $e');
+      }
+    } else {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _assessments = [];
+        _filteredAssessments = [];
+      });
+      print('User ID is null');
+    }
   }
 
   void _filterAssessments(String query) {
     setState(() {
-      _filteredAssessments = _sampleAssessments
-          .where((assessment) =>
-              assessment['title'].toLowerCase().contains(query.toLowerCase()))
+      _filteredAssessments = _assessments
+          .where((assessment) => assessment['title']
+              .toString()
+              .toLowerCase()
+              .contains(query.toLowerCase()))
           .toList();
     });
   }
@@ -93,28 +152,68 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
 
         const SizedBox(height: 16),
 
-        // Assessment List
+        // Assessment List or Empty State
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.50,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: _filteredAssessments.map((assessment) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: _AssessmentListItem(
-                      title: assessment['title'],
-                      iconPath: assessment['iconPath'],
-                      onTap: () {},
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
+          child: _buildContent(),
         ),
       ],
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_assessments.isEmpty) {
+      return const _EmptyState(
+        message: "No assessments available yet",
+        icon: Icons.assignment_outlined,
+      );
+    }
+
+    if (_filteredAssessments.isEmpty) {
+      return _EmptyState(
+        message: "No assessments found for '${_searchController.text}'",
+        icon: Icons.search_off_outlined,
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: _filteredAssessments.map((assessment) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: _AssessmentListItem(
+                title: assessment['title'],
+                iconPath: assessment['type'] == 'essay'
+                    ? 'assets/images/assessment_essay.png'
+                    : 'assets/images/assessment_test.png',
+                onTap: () {
+                  if (assessment['type'] == 'essay') {
+                    // TODO: Handle essay assessment
+                  } else {
+                    final identificationAssessment =
+                        assessment['data'] as IdentificationAssessment;
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => EditIdentificationScreen(
+                          assessmentId: identificationAssessment.id,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -122,6 +221,41 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String message;
+  final IconData icon;
+
+  const _EmptyState({
+    required this.message,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 64,
+            color: AppColors.textSecondary.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: AppColors.textSecondary.withOpacity(0.5),
+              fontSize: 16,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -141,7 +275,7 @@ class _AssessmentListItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 96, // Increased height
+        height: 96,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -155,7 +289,7 @@ class _AssessmentListItem extends StatelessWidget {
               child: Center(
                 child: Image.asset(
                   iconPath,
-                  height: 128, // Increased image size
+                  height: 128,
                   width: 128,
                 ),
               ),

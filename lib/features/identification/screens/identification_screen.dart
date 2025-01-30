@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:snapscore_android/core/providers/auth_provider.dart';
 import 'package:snapscore_android/features/identification/models/identification_model.dart';
+import 'package:snapscore_android/features/identification/screens/edit_identification_screen.dart';
 import 'package:snapscore_android/features/identification/services/identification_submission.dart';
 import '../../../core/themes/colors.dart';
 import '../widgets/identification_form.dart';
 
 class IdentificationFormData {
   final String assessmentName;
-  final List<IdentificationAnswer> answers;
+  final List<Map<String, dynamic>> answers;
 
   IdentificationFormData({
     required this.assessmentName,
@@ -49,35 +50,59 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
   Future<void> _handleFormSubmit(Map<String, dynamic> data) async {
     try {
       final service = IdentificationService();
-      String? userId =
-          Provider.of<AuthProvider>(context, listen: false).user?.uid;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final mongoDbUserId = authProvider.userId;
 
-      // Convert the raw answers data to IdentificationAnswer objects
-      final answers = (data['answers'] as List<dynamic>).map((answer) {
-        return IdentificationAnswer(
-          number: answer['number'] as int,
-          answer: answer['answer'] as String,
-        );
-      }).toList();
+      // Debug print to see the structure
+      print('Raw form data: ${data}');
+      print('Raw answers type: ${data['answers'].runtimeType}');
 
-      final formData = IdentificationFormData(
-        assessmentName: data['assessmentName'] as String,
-        answers: answers,
-      );
+      List<IdentificationAnswer> identificationAnswers;
+
+      if (data['answers'] is List<Map<String, dynamic>>) {
+        // If the answers are maps, convert them to IdentificationAnswer objects
+        identificationAnswers = (data['answers'] as List<Map<String, dynamic>>)
+            .map((answer) => IdentificationAnswer(
+                  number: answer['number'] as int,
+                  answer: answer['answer'] as String,
+                ))
+            .toList();
+      } else if (data['answers'] is List<IdentificationAnswer>) {
+        // If they're already IdentificationAnswer objects, use them directly
+        identificationAnswers = data['answers'] as List<IdentificationAnswer>;
+      } else {
+        throw Exception(
+            'Unexpected answers format: ${data['answers'].runtimeType}');
+      }
 
       final result = await service.createAssessment(
-        assessmentName: formData.assessmentName,
-        answers: formData.answers,
-        userId: userId!,
+        assessmentName: data['assessmentName'] as String,
+        answers: identificationAnswers,
+        userId: mongoDbUserId!,
       );
 
-      print(result);
+      if (result['error'] == true) {
+        throw Exception(result['message']);
+      }
+
+      if (result['id'] == null) {
+        throw Exception('Assessment ID not found');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Assessment created successfully!')),
         );
       }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditIdentificationScreen(
+            assessmentId: result['id'],
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -147,16 +172,6 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
                   imagePath: "assets/icons/assessment_save.png",
                   label: 'Save',
                   onPressed: _handleSave,
-                ),
-                _BottomButton(
-                  imagePath: "assets/icons/assessment_scan.png",
-                  label: 'Scan',
-                  onPressed: () {},
-                ),
-                _BottomButton(
-                  imagePath: "assets/icons/assessment_results.png",
-                  label: 'Results',
-                  onPressed: () {},
                 ),
               ],
             ),
