@@ -12,11 +12,13 @@ class IdentificationFormController {
 class IdentificationForm extends StatefulWidget {
   final OnSubmitCallback onSubmit;
   final IdentificationFormController controller;
+  final IdentificationFormDataModel? initialData;
 
   const IdentificationForm({
     super.key,
     required this.onSubmit,
     required this.controller,
+    this.initialData,
   });
 
   @override
@@ -24,7 +26,7 @@ class IdentificationForm extends StatefulWidget {
 }
 
 class _IdentificationFormState extends State<IdentificationForm> {
-  int selectedQuestions = 10;
+  late int selectedQuestions;
   final List<int> questionOptions = [10, 20, 30, 40, 50];
   final List<TextEditingController> answerControllers = [];
   final TextEditingController titleController = TextEditingController();
@@ -34,7 +36,30 @@ class _IdentificationFormState extends State<IdentificationForm> {
   void initState() {
     super.initState();
     widget.controller.submitForm = _submitForm;
-    _initializeAnswerControllers(10);
+
+    // Initialize with provided data if available, otherwise use default
+    if (widget.initialData != null) {
+      // Set the title
+      titleController.text = widget.initialData!.name;
+
+      selectedQuestions = widget.initialData!.answers.length;
+      // Ensure selectedQuestions is one of the valid options
+      if (!questionOptions.contains(selectedQuestions)) {
+        selectedQuestions = questionOptions.firstWhere(
+          (option) => option >= selectedQuestions,
+          orElse: () => questionOptions.first,
+        );
+      }
+      _initializeAnswerControllers(selectedQuestions);
+
+      // Fill in answers
+      for (int i = 0; i < widget.initialData!.answers.length; i++) {
+        answerControllers[i].text = widget.initialData!.answers[i].answer;
+      }
+    } else {
+      selectedQuestions = questionOptions.first; // Default to first option
+      _initializeAnswerControllers(selectedQuestions);
+    }
   }
 
   void _initializeAnswerControllers(int count) {
@@ -44,7 +69,7 @@ class _IdentificationFormState extends State<IdentificationForm> {
     }
     answerControllers.clear();
 
-    // Add new controllers
+    // Create new controllers
     for (int i = 0; i < count; i++) {
       answerControllers.add(TextEditingController());
     }
@@ -77,9 +102,19 @@ class _IdentificationFormState extends State<IdentificationForm> {
       return;
     }
 
-    // Build and submit the JSON data
-    final jsonData = buildJsonRequest();
-    await widget.onSubmit(jsonData);
+    // Build and submit the data
+    final formData = {
+      'assessmentName': titleController.text,
+      'answers': List.generate(
+        answerControllers.length,
+        (index) => IdentificationAnswer(
+          number: index + 1,
+          answer: answerControllers[index].text,
+        ),
+      ),
+    };
+
+    await widget.onSubmit(formData);
   }
 
   // JSON Request Builder Method
@@ -138,8 +173,6 @@ class _IdentificationFormState extends State<IdentificationForm> {
                             color: AppColors.textSecondary,
                             fontSize: 16,
                           ),
-                          softWrap: true,
-                          overflow: TextOverflow.visible,
                         ),
                       ),
                     ],
@@ -153,24 +186,27 @@ class _IdentificationFormState extends State<IdentificationForm> {
                       border: Border.all(color: Colors.black),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: DropdownButton<int>(
-                      value: selectedQuestions,
-                      isExpanded: true,
-                      underline: const SizedBox(),
-                      items: questionOptions.map((int value) {
-                        return DropdownMenuItem<int>(
-                          value: value,
-                          child: Text(value.toString()),
-                        );
-                      }).toList(),
-                      onChanged: (int? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            selectedQuestions = newValue;
-                            _initializeAnswerControllers(newValue);
-                          });
-                        }
-                      },
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: selectedQuestions,
+                        isExpanded: true,
+                        items: questionOptions.map((int value) {
+                          return DropdownMenuItem<int>(
+                            value: value,
+                            child: Text('$value questions'),
+                          );
+                        }).toList(),
+                        onChanged: widget.initialData != null
+                            ? null // Disable dropdown if editing existing assessment
+                            : (int? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    selectedQuestions = newValue;
+                                    _initializeAnswerControllers(newValue);
+                                  });
+                                }
+                              },
+                      ),
                     ),
                   ),
                 ),

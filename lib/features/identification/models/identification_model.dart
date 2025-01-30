@@ -14,6 +14,35 @@ class IdentificationAnswer {
       'answer': answer,
     };
   }
+
+  factory IdentificationAnswer.fromJson(Map<String, dynamic> json) {
+    return IdentificationAnswer(
+      number: json['number'] as int,
+      answer: json['answer'] as String,
+    );
+  }
+}
+
+class IdentificationFormDataModel {
+  final String assessmentId;
+  final String name;
+  final List<IdentificationAnswerWithId> answers;
+
+  IdentificationFormDataModel({
+    required this.assessmentId,
+    required this.name,
+    required this.answers,
+  });
+}
+
+class IdentificationAnswerWithId extends IdentificationAnswer {
+  final String id;
+
+  IdentificationAnswerWithId({
+    required this.id,
+    required super.number,
+    required super.answer,
+  });
 }
 
 class IdentificationData {

@@ -13,13 +13,15 @@ class IdentificationService {
       required String assessmentId}) async {
     try {
       final response =
-          await http.post(Uri.parse('$baseUrl/identification-assessment'),
+          await http.post(Uri.parse('$baseUrl/identification-questions'),
               headers: {'Content-Type': 'application/json'},
               body: jsonEncode({
-                'question': answer.number,
+                'question': answer.number.toString(),
                 'correctAnswer': answer.answer,
                 'assessmentId': assessmentId
               }));
+
+      print(response.body);
 
       return jsonDecode(response.body);
     } catch (e) {
@@ -46,6 +48,8 @@ class IdentificationService {
         throw Exception('Failed to create assessment: ${data['message']}');
       }
 
+      print(data);
+
       final assessmentId = data['id'];
       for (var answer in answers) {
         await _createIdentificationanswers(
@@ -55,6 +59,64 @@ class IdentificationService {
       return jsonDecode(response.body);
     } catch (e) {
       return {'error': true, 'message': 'Failed to create assessment: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getAssessment(String assessmentId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/identification-assessment/$assessmentId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': true, 'message': 'Failed to fetch assessment: $e'};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getQuestions(String assessmentId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/identification-questions/$assessmentId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> updateAssessment({
+    required String assessmentId,
+    required String assessmentName,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/identification-assessment/$assessmentId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'name': assessmentName}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': true, 'message': 'Failed to update assessment: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateQuestion({
+    required String questionId,
+    required String answer,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/identification-questions/$questionId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'correctAnswer': answer,
+        }),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': true, 'message': 'Failed to update question: $e'};
     }
   }
 }
