@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:snapscore_android/features/auth/helpers/api_service_helper.dart';
 import 'firebase_options.dart';
 import 'core/themes/app_theme.dart';
 import 'core/themes/colors.dart';
@@ -26,6 +27,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<ApiService>(
+          create: (_) => ApiService(),
+        ),
+        Provider<AuthWrapper>(
+          create: (_) => AuthWrapper(
+            authenticatedRoute: const AssessmentScreen(),
+            unauthenticatedRoute: const SplashScreen(),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
