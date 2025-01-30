@@ -12,6 +12,17 @@ class AuthWrapper extends StatelessWidget {
     required this.unauthenticatedRoute,
   });
 
+  static void forceAuthenticatedRoute(BuildContext context) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            Provider.of<AuthWrapper>(context, listen: false).authenticatedRoute,
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(

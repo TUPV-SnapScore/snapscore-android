@@ -35,36 +35,53 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> googleSignIn(
-      {required String email,
-      required String fullName,
-      required String userId}) async {
+  Future<Map<String, dynamic>> googleSignIn({
+    required String email,
+    required String fullName,
+    required String userId,
+  }) async {
     try {
-      final existingUser = await http.get(
+      // First check if user exists
+      final existingUserResponse = await http.get(
         Uri.parse('$baseUrl/users/firebase/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
-      if (existingUser.statusCode == 200) {
-        return jsonDecode(existingUser.body);
+      print('Existing user response: ${existingUserResponse.body}');
+
+      // If user exists and response is valid JSON, return it
+      if (existingUserResponse.statusCode == 200 &&
+          existingUserResponse.body.isNotEmpty) {
+        return jsonDecode(existingUserResponse.body);
       }
 
-      final response = await http.post(
+      // If user doesn't exist, create new user
+      final createUserResponse = await http.post(
         Uri.parse('$baseUrl/users'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
           'fullName': fullName,
+          'firebaseId': userId, // Added this field
         }),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(response.body);
+      print('Create user response: ${createUserResponse.body}');
+
+      if (createUserResponse.statusCode == 201 ||
+          createUserResponse.statusCode == 200) {
+        if (createUserResponse.body.isEmpty) {
+          throw Exception('Empty response received from server');
+        }
+        return jsonDecode(createUserResponse.body);
       } else {
-        throw Exception(
-            jsonDecode(response.body)['message'] ?? 'Google sign-in failed');
+        final errorBody = createUserResponse.body.isNotEmpty
+            ? jsonDecode(createUserResponse.body)['message']
+            : 'Google sign-in failed';
+        throw Exception(errorBody);
       }
     } catch (e) {
+      print('Google sign-in error: $e');
       throw Exception('Failed to register with Google: ${e.toString()}');
     }
   }

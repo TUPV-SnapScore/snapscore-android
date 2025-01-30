@@ -34,6 +34,15 @@ class AuthProvider extends ChangeNotifier {
     await _authService.signOut();
   }
 
+  Future<void> refreshAuthState() async {
+    _isLoading = true;
+    notifyListeners();
+
+    _user = FirebaseAuth.instance.currentUser;
+    _isLoading = false;
+    notifyListeners();
+  }
+
   User? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:snapscore_android/core/router/auth_wrapper.dart';
 import 'package:snapscore_android/features/assessments/screens/assessments_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -97,18 +98,23 @@ class _RegisterFormState extends State<RegisterForm> {
       final googleUser = googleUserCredential?.user;
       if (googleUser != null && googleUser.email != null) {
         // Create user in your backend
-        final apiService = Provider.of<ApiService>(context, listen: false);
+        final apiService = ApiService();
         await apiService.googleSignIn(
           email: googleUser.email!,
           userId: googleUser.uid,
           fullName: googleUser.displayName ?? 'Google User',
         );
+
+        // Force refresh the auth state
+        await authProvider.refreshAuthState();
       }
+
+      AuthWrapper.forceAuthenticatedRoute(context);
 
       // AuthWrapper will handle navigation
     } catch (e) {
-      print(e);
       setState(() => _isLoading = false);
+      print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

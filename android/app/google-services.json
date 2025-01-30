@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "757456957598-i1ovpddcsb8u5q7ops6b163vtf6afefd.apps.googleusercontent.com",
+          "client_id": "757456957598-ojlhco0kv7as26dn1sde457nah141ksb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.snapscore_tupv.app",
-            "certificate_hash": "e8debfe40adce98c386623acee2af5add691ce9d"
+            "certificate_hash": "e95a7f25761e969ad99b2059a94ae59852280986"
           }
         },
         {
