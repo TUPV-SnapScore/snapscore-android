@@ -10,11 +10,13 @@ class EssayFormController {
 class NewEssayForm extends StatefulWidget {
   final EssayFormController controller;
   final Future<void> Function(Map<String, dynamic> data) onSubmit;
+  final EssayData? initialData;
 
   const NewEssayForm({
     super.key,
     required this.controller,
     required this.onSubmit,
+    this.initialData,
   });
 
   @override
@@ -22,7 +24,7 @@ class NewEssayForm extends StatefulWidget {
 }
 
 class _NewEssayFormState extends State<NewEssayForm> {
-  int selectedQuestions = 1;
+  late int selectedQuestions;
   final List<int> questionOptions = [1, 3, 5];
   final List<TextEditingController> questionControllers = [];
   final List<TextEditingController> criteriaControllers = [];
@@ -34,9 +36,34 @@ class _NewEssayFormState extends State<NewEssayForm> {
   void initState() {
     super.initState();
     widget.controller.submitForm = _submitForm;
-    questionControllers.add(TextEditingController());
-    criteriaControllers.add(TextEditingController());
-    criteriaScoreControllers.add(TextEditingController());
+
+    // Initialize with provided data if available
+    if (widget.initialData != null) {
+      titleController.text = widget.initialData!.essayTitle;
+      selectedQuestions = widget.initialData!.questions.length;
+
+      // Initialize controllers with existing data
+      for (var question in widget.initialData!.questions) {
+        questionControllers.add(
+          TextEditingController(text: question.questionText),
+        );
+      }
+
+      for (var criterion in widget.initialData!.criteria) {
+        criteriaControllers.add(
+          TextEditingController(text: criterion.criteriaText),
+        );
+        criteriaScoreControllers.add(
+          TextEditingController(text: criterion.maxScore.toString()),
+        );
+      }
+    } else {
+      // Default initialization
+      selectedQuestions = questionOptions.first;
+      questionControllers.add(TextEditingController());
+      criteriaControllers.add(TextEditingController());
+      criteriaScoreControllers.add(TextEditingController());
+    }
   }
 
   Future<void> _submitForm() async {
@@ -91,6 +118,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
     for (int i = 0; i < questionControllers.length; i++) {
       if (questionControllers[i].text.isNotEmpty) {
         questions.add(EssayQuestion(
+          id: 'q${i + 1}',
           questionNumber: i + 1,
           questionText: questionControllers[i].text,
         ));
@@ -102,6 +130,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
     for (int i = 0; i < criteriaControllers.length; i++) {
       if (criteriaControllers[i].text.isNotEmpty) {
         criteria.add(EssayCriteria(
+          id: 'c${i + 1}',
           criteriaNumber: i + 1,
           criteriaText: criteriaControllers[i].text,
           maxScore: double.tryParse(criteriaScoreControllers[i].text) ?? 0.0,
@@ -141,6 +170,9 @@ class _NewEssayFormState extends State<NewEssayForm> {
   }
 
   void addCriteria() {
+    // Disable adding criteria in edit mode
+    if (widget.initialData != null) return;
+
     if (criteriaControllers.length < 5) {
       setState(() {
         criteriaControllers.add(TextEditingController());
@@ -158,6 +190,9 @@ class _NewEssayFormState extends State<NewEssayForm> {
   }
 
   void removeCriteria(int index) {
+    // Disable removing criteria in edit mode
+    if (widget.initialData != null) return;
+
     if (criteriaControllers.length > 1) {
       setState(() {
         criteriaControllers[index].dispose();
@@ -230,14 +265,16 @@ class _NewEssayFormState extends State<NewEssayForm> {
                           child: Text(value.toString()),
                         );
                       }).toList(),
-                      onChanged: (int? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            selectedQuestions = newValue;
-                            updateQuestionFields(newValue);
-                          });
-                        }
-                      },
+                      onChanged: widget.initialData != null
+                          ? null // Disable dropdown if editing
+                          : (int? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedQuestions = newValue;
+                                  updateQuestionFields(newValue);
+                                });
+                              }
+                            },
                     ),
                   ),
                 ),
@@ -269,53 +306,56 @@ class _NewEssayFormState extends State<NewEssayForm> {
             const SizedBox(height: 20),
             _buildFormLabel('Rubrics:'),
             ...List.generate(
-                criteriaControllers.length,
-                (index) => Column(
-                      children: [
-                        if (index > 0) const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: _buildTextField(
-                                hintText: 'Input essay criteria',
-                                prefixIconAsset: "assets/icons/rubric_item.png",
-                                controller: criteriaControllers[index],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTextField(
-                                hintText: 'Score',
-                                controller: criteriaScoreControllers[index],
-                                keyboardType: TextInputType.number,
-                                onChanged: (_) => updateTotalScore(),
-                              ),
-                            ),
-                            if (index > 0 || criteriaControllers.length > 1)
-                              IconButton(
-                                icon: Icon(
-                                  Icons.remove_circle_outline,
-                                  color: AppColors.error,
-                                ),
-                                onPressed: () => removeCriteria(index),
-                              ),
-                          ],
+              criteriaControllers.length,
+              (index) => Column(
+                children: [
+                  if (index > 0) const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _buildTextField(
+                          hintText: 'Input essay criteria',
+                          prefixIconAsset: "assets/icons/rubric_item.png",
+                          controller: criteriaControllers[index],
                         ),
-                      ],
-                    )),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: _buildTextField(
+                          hintText: 'Score',
+                          controller: criteriaScoreControllers[index],
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => updateTotalScore(),
+                        ),
+                      ),
+                      // Only show remove button if not in edit mode
+                      if ((index > 0 || criteriaControllers.length > 1) &&
+                          widget.initialData == null)
+                        IconButton(
+                          icon: Icon(
+                            Icons.remove_circle_outline,
+                            color: AppColors.error,
+                          ),
+                          onPressed: () => removeCriteria(index),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
-            if (criteriaControllers.length < 5)
+            // Only show add criteria button if not in edit mode
+            if (criteriaControllers.length < 5 && widget.initialData == null)
               TextButton(
                 onPressed: addCriteria,
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
-                  minimumSize:
-                      const Size.fromHeight(50), // Makes button take full width
+                  minimumSize: const Size.fromHeight(50),
                 ),
                 child: Container(
-                  width: double.infinity, // Makes container take full width
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: Colors.black),
@@ -324,8 +364,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.start, // Centers the content
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Icon(Icons.add, color: AppColors.textSecondary),
                       const SizedBox(width: 8),
@@ -334,7 +373,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold, // Makes text bold
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],

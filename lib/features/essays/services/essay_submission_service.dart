@@ -17,9 +17,8 @@ class EssayService {
         Uri.parse('$baseUrl/essay-questions'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'questionNumber': question.questionNumber,
-          'questionText': question.questionText,
-          'essayId': essayId,
+          'question': question.questionText,
+          'assessmentId': essayId,
         }),
       );
 
@@ -41,10 +40,9 @@ class EssayService {
         Uri.parse('$baseUrl/essay-criteria'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'criteriaNumber': criteria.criteriaNumber,
-          'criteriaText': criteria.criteriaText,
+          'criteria': criteria.criteriaText,
           'maxScore': criteria.maxScore,
-          'essayId': essayId,
+          'essayQuestionId': essayId,
         }),
       );
 
@@ -68,9 +66,8 @@ class EssayService {
         Uri.parse('$baseUrl/essay-assessment'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'title': essayTitle,
+          'name': essayTitle,
           'userId': userId,
-          'totalScore': criteria.fold(0.0, (sum, item) => sum + item.maxScore),
         }),
       );
 
@@ -83,13 +80,17 @@ class EssayService {
       final essayId = data['id'];
 
       // Create questions
+      String? firstQuestionId;
       for (var question in questions) {
-        await _createEssayQuestion(question: question, essayId: essayId);
+        final questionResponse =
+            await _createEssayQuestion(question: question, essayId: essayId);
+        firstQuestionId ??= questionResponse['id'];
       }
 
       // Create criteria
       for (var criterion in criteria) {
-        await _createEssayCriteria(criteria: criterion, essayId: essayId);
+        await _createEssayCriteria(
+            criteria: criterion, essayId: firstQuestionId!);
       }
 
       return data;
@@ -119,16 +120,11 @@ class EssayService {
   Future<Map<String, dynamic>> updateEssay({
     required String essayId,
     required String essayTitle,
-    double? totalScore,
   }) async {
     try {
       final Map<String, dynamic> body = {
-        'title': essayTitle,
+        'name': essayTitle,
       };
-
-      if (totalScore != null) {
-        body['totalScore'] = totalScore;
-      }
 
       final response = await http.put(
         Uri.parse('$baseUrl/essay-assessment/$essayId'),
@@ -153,7 +149,7 @@ class EssayService {
         Uri.parse('$baseUrl/essay-questions/$questionId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'questionText': questionText,
+          'question': questionText, // Changed from questionText to question
         }),
       );
       return jsonDecode(response.body);
@@ -175,7 +171,7 @@ class EssayService {
         Uri.parse('$baseUrl/essay-criteria/$criteriaId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'criteriaText': criteriaText,
+          'criteria': criteriaText, // Changed from criteriaText to criteria
           'maxScore': maxScore,
         }),
       );
