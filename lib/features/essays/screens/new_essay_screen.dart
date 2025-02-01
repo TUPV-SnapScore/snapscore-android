@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snapscore_android/core/providers/auth_provider.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
+import 'package:snapscore_android/features/essays/models/essay_model.dart';
+import 'package:snapscore_android/features/essays/services/essay_submission_service.dart';
 import 'package:snapscore_android/features/essays/widgets/new_essay_form.dart';
 
 class NewEssayScreen extends StatefulWidget {
@@ -11,18 +15,17 @@ class NewEssayScreen extends StatefulWidget {
 
 class _NewEssayScreenState extends State<NewEssayScreen> {
   final _formController = EssayFormController();
+  final _essayService = EssayService();
 
   Future<void> _handleSave() async {
     try {
       _formController.submitForm?.call();
-      // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Essay assessment saved successfully!')),
         );
       }
     } catch (e) {
-      // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -33,24 +36,53 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
   }
 
   Future<void> _handleFormSubmit(Map<String, dynamic> data) async {
-    // Here you would typically make your HTTP request
-    // Example:
-    // final response = await http.post(
-    //   Uri.parse('your-api-endpoint'),
-    //   body: jsonEncode(data),
-    //   headers: {'Content-Type': 'application/json'},
-    // );
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.userId;
 
-    // For now, just print the data
-    print('Submitting essay data: $data');
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
+      // Extract data from the form submission
+      final essayData = EssayData.fromJson(data);
 
-    // You can throw an error here if the API call fails
-    // if (response.statusCode != 200) {
-    //   throw Exception('Failed to save essay assessment');
-    // }
+      final result = await _essayService.createEssay(
+        essayTitle: essayData.essayTitle,
+        questions: essayData.questions,
+        criteria: essayData.criteria,
+        userId: userId,
+      );
+
+      if (result['error'] == true) {
+        throw Exception(result['message']);
+      }
+
+      if (result['id'] == null) {
+        throw Exception('Essay ID not found in response');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Essay created successfully!')),
+        );
+        // You can navigate to an edit screen here if needed
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => EditEssayScreen(
+        //       essayId: result['id'],
+        //     ),
+        //   ),
+        // );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating essay: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override

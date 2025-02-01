@@ -49,6 +49,26 @@ class EssayData {
     required this.totalScore,
   });
 
+  factory EssayData.fromJson(Map<String, dynamic> json) {
+    return EssayData(
+      essayTitle: json['essayTitle'] as String,
+      questions: (json['questions'] as List)
+          .map((q) => EssayQuestion(
+                questionNumber: q['questionNumber'] as int,
+                questionText: q['questionText'] as String,
+              ))
+          .toList(),
+      criteria: (json['criteria'] as List)
+          .map((c) => EssayCriteria(
+                criteriaNumber: c['criteriaNumber'] as int,
+                criteriaText: c['criteriaText'] as String,
+                maxScore: c['maxScore'] as double,
+              ))
+          .toList(),
+      totalScore: json['totalScore'] as double,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'essayTitle': essayTitle,
