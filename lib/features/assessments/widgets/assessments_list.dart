@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:snapscore_android/core/providers/auth_provider.dart';
 import 'package:snapscore_android/features/assessments/models/assessment_model.dart';
 import 'package:snapscore_android/features/assessments/services/assessments_service.dart';
+import 'package:snapscore_android/features/essays/screens/edit_essay_screen.dart';
 import 'package:snapscore_android/features/identification/screens/edit_identification_screen.dart';
 import '../../../core/themes/colors.dart';
 
@@ -169,49 +170,84 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
     }
 
     if (_assessments.isEmpty) {
-      return const _EmptyState(
-        message: "No assessments available yet",
-        icon: Icons.assignment_outlined,
+      return RefreshIndicator(
+        onRefresh: _loadAssessments,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: const _EmptyState(
+              message: "No assessments available yet",
+              icon: Icons.assignment_outlined,
+            ),
+          ),
+        ),
       );
     }
 
     if (_filteredAssessments.isEmpty) {
-      return _EmptyState(
-        message: "No assessments found for '${_searchController.text}'",
-        icon: Icons.search_off_outlined,
+      return RefreshIndicator(
+        onRefresh: _loadAssessments,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: _EmptyState(
+              message: "No assessments found for '${_searchController.text}'",
+              icon: Icons.search_off_outlined,
+            ),
+          ),
+        ),
       );
     }
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          children: _filteredAssessments.map((assessment) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _AssessmentListItem(
-                title: assessment['title'],
-                iconPath: assessment['type'] == 'essay'
-                    ? 'assets/images/assessment_essay.png'
-                    : 'assets/images/assessment_test.png',
-                onTap: () {
-                  if (assessment['type'] == 'essay') {
-                    // TODO: Handle essay assessment
-                  } else {
-                    final identificationAssessment =
-                        assessment['data'] as IdentificationAssessment;
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => EditIdentificationScreen(
-                          assessmentId: identificationAssessment.id,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            );
-          }).toList(),
+    return RefreshIndicator(
+      onRefresh: _loadAssessments,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: _filteredAssessments.map((assessment) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: _AssessmentListItem(
+                    title: assessment['title'],
+                    iconPath: assessment['type'] == 'essay'
+                        ? 'assets/images/assessment_essay.png'
+                        : 'assets/images/assessment_test.png',
+                    onTap: () {
+                      if (assessment['type'] == 'essay') {
+                        final essayAssessment =
+                            assessment['data'] as EssayAssessment;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EditEssayScreen(
+                              essayId: essayAssessment.id,
+                            ),
+                          ),
+                        );
+                      } else {
+                        final identificationAssessment =
+                            assessment['data'] as IdentificationAssessment;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EditIdentificationScreen(
+                              assessmentId: identificationAssessment.id,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
     );
