@@ -1,0 +1,228 @@
+import 'package:flutter/material.dart';
+import 'package:snapscore_android/core/themes/colors.dart';
+import 'package:snapscore_android/features/identification/models/identification_model.dart';
+import 'package:snapscore_android/features/identification/services/identification_submission.dart';
+import 'package:snapscore_android/features/identification/widgets/identification_form.dart';
+
+class EditIdentificationScreen extends StatefulWidget {
+  final String assessmentId;
+
+  const EditIdentificationScreen({
+    super.key,
+    required this.assessmentId,
+  });
+
+  @override
+  State<EditIdentificationScreen> createState() =>
+      _EditIdentificationScreenState();
+}
+
+class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
+  final IdentificationService _identificationService = IdentificationService();
+  final IdentificationFormController _formController =
+      IdentificationFormController();
+  bool _isLoading = true;
+  IdentificationFormDataModel? _initialData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAssessmentData();
+  }
+
+  Future<void> _loadAssessmentData() async {
+    try {
+      // Fetch assessment details
+      final assessmentData =
+          await _identificationService.getAssessment(widget.assessmentId);
+      print('Assessment data: $assessmentData');
+
+      if (mounted) {
+        // Extract questions from the assessment data
+        final questions =
+            (assessmentData['identificationQuestions'] as List<dynamic>)
+                .map((q) => IdentificationAnswerWithId(
+                      id: q['id'],
+                      number: int.parse(q['question']),
+                      answer: q['correctAnswer'],
+                    ))
+                .toList();
+
+        // Sort questions by number to ensure correct order
+        questions.sort((a, b) => a.number.compareTo(b.number));
+
+        setState(() {
+          _initialData = IdentificationFormDataModel(
+            assessmentId: widget.assessmentId,
+            name: assessmentData['name'],
+            answers: questions,
+          );
+          _isLoading = false;
+        });
+
+        // For debugging
+        print('Initial Data: ${_initialData?.name}');
+        print('Number of answers: ${_initialData?.answers.length}');
+        for (var answer in _initialData?.answers ?? []) {
+          print('Question ${answer.number}: ${answer.answer}');
+        }
+      }
+    } catch (e) {
+      print('Error loading assessment data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load assessment data')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleSubmit(Map<String, dynamic> formData) async {
+    try {
+      // Update assessment name if changed
+      if (_initialData!.name != formData['assessmentName']) {
+        await _identificationService.updateAssessment(
+          assessmentId: widget.assessmentId,
+          assessmentName: formData['assessmentName'],
+        );
+      }
+
+      // Update questions
+      final answers = (formData['answers'] as List<IdentificationAnswer>);
+      final initialAnswers = _initialData!.answers;
+
+      for (int i = 0; i < answers.length; i++) {
+        if (i < initialAnswers.length) {
+          // Update existing question if answer changed
+          if (answers[i].answer != initialAnswers[i].answer) {
+            await _identificationService.updateQuestion(
+              questionId: initialAnswers[i].id,
+              answer: answers[i].answer,
+            );
+          }
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Assessment updated successfully')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('Error updating assessment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update assessment')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Edit Assessment',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: IdentificationForm(
+                    controller: _formController,
+                    onSubmit: _handleSubmit,
+                    initialData: _initialData,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    border: Border(
+                      top: BorderSide(color: AppColors.border),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _BottomButton(
+                        imagePath: "assets/icons/assessment_save.png",
+                        label: 'Update',
+                        onPressed: () => _formController.submitForm?.call(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _BottomButton extends StatelessWidget {
+  final String imagePath;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _BottomButton({
+    required this.imagePath,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: Colors.black,
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Image.asset(
+                  imagePath,
+                  width: 24,
+                  height: 24,
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
