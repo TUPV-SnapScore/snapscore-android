@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
+import 'package:snapscore_android/features/camera/widgets/camera.dart';
 import 'package:snapscore_android/features/identification/models/identification_model.dart';
 import 'package:snapscore_android/features/identification/services/identification_submission.dart';
 import 'package:snapscore_android/features/identification/widgets/identification_form.dart';
@@ -166,6 +167,22 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
                         imagePath: "assets/icons/assessment_save.png",
                         label: 'Update',
                         onPressed: () => _formController.submitForm?.call(),
+                      ),
+                      _BottomButton(
+                        imagePath: "assets/icons/assessment_scan.png",
+                        label: 'Scan',
+                        onPressed: () => {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Camera())),
+                        },
+                      ),
+                      _BottomButton(
+                        imagePath: "assets/icons/assessment_results.png",
+                        label: 'Results',
+                        onPressed: // TODO: Implement onPressed
+                            () => {},
                       ),
                     ],
                   ),
