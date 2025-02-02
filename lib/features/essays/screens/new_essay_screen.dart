@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:snapscore_android/core/providers/auth_provider.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
 import 'package:snapscore_android/features/essays/models/essay_model.dart';
+import 'package:snapscore_android/features/essays/screens/edit_essay_screen.dart';
 import 'package:snapscore_android/features/essays/services/essay_submission_service.dart';
 import 'package:snapscore_android/features/essays/widgets/new_essay_form.dart';
 
@@ -46,6 +47,7 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
 
       // Extract data from the form submission
       final essayData = EssayData.fromJson(data);
+      print(essayData.toJson());
 
       final result = await _essayService.createEssay(
         essayTitle: essayData.essayTitle,
@@ -66,15 +68,15 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Essay created successfully!')),
         );
-        // You can navigate to an edit screen here if needed
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => EditEssayScreen(
-        //       essayId: result['id'],
-        //     ),
-        //   ),
-        // );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditEssayScreen(
+              essayId: result['id'],
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

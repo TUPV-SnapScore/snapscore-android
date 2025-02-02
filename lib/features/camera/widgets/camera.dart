@@ -7,14 +7,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
 
-class RegularCamera extends StatefulWidget {
-  const RegularCamera({super.key});
+class Camera extends StatefulWidget {
+  const Camera({super.key});
 
   @override
-  RegularCameraState createState() => RegularCameraState();
+  CameraState createState() => CameraState();
 }
 
-class RegularCameraState extends State<RegularCamera> {
+class CameraState extends State<Camera> {
   CameraController? _controller;
   File? _capturedImage;
   bool _isProcessing = false;

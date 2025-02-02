@@ -1,79 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
 import 'package:snapscore_android/features/camera/widgets/camera.dart';
-import 'package:snapscore_android/features/identification/models/identification_model.dart';
-import 'package:snapscore_android/features/identification/services/identification_submission.dart';
-import 'package:snapscore_android/features/identification/widgets/identification_form.dart';
+import 'package:snapscore_android/features/essays/models/essay_model.dart';
+import 'package:snapscore_android/features/essays/services/essay_submission_service.dart';
+import 'package:snapscore_android/features/essays/widgets/new_essay_form.dart';
 
-class EditIdentificationScreen extends StatefulWidget {
-  final String assessmentId;
+class EditEssayScreen extends StatefulWidget {
+  final String essayId;
 
-  const EditIdentificationScreen({
+  const EditEssayScreen({
     super.key,
-    required this.assessmentId,
+    required this.essayId,
   });
 
   @override
-  State<EditIdentificationScreen> createState() =>
-      _EditIdentificationScreenState();
+  State<EditEssayScreen> createState() => _EditEssayScreenState();
 }
 
-class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
-  final IdentificationService _identificationService = IdentificationService();
-  final IdentificationFormController _formController =
-      IdentificationFormController();
+class _EditEssayScreenState extends State<EditEssayScreen> {
+  final EssayService _essayService = EssayService();
+  final EssayFormController _formController = EssayFormController();
   bool _isLoading = true;
-  IdentificationFormDataModel? _initialData;
+  EssayData? _initialData;
 
   @override
   void initState() {
     super.initState();
-    _loadAssessmentData();
+    _loadEssayData();
   }
 
-  Future<void> _loadAssessmentData() async {
+  Future<void> _loadEssayData() async {
     try {
-      // Fetch assessment details
-      final assessmentData =
-          await _identificationService.getAssessment(widget.assessmentId);
-      print('Assessment data: $assessmentData');
+      final essayData = await _essayService.getEssay(widget.essayId);
+      print('Essay data: $essayData');
 
       if (mounted) {
-        // Extract questions from the assessment data
-        final questions =
-            (assessmentData['identificationQuestions'] as List<dynamic>)
-                .map((q) => IdentificationAnswerWithId(
-                      id: q['id'],
-                      number: int.parse(q['question']),
-                      answer: q['correctAnswer'],
-                    ))
-                .toList();
+        // Extract questions with IDs
+        final questions = essayData['essayQuestions']
+            .asMap()
+            .entries
+            .map((entry) => EssayQuestion(
+                  questionNumber: entry.key + 1,
+                  questionText: entry.value['question'],
+                  id: entry.value['id'], // Store the original ID
+                ))
+            .toList();
 
-        // Sort questions by number to ensure correct order
-        questions.sort((a, b) => a.number.compareTo(b.number));
+        // Get criteria with IDs
+        final criteria = essayData['essayQuestions'][0]['essayCriteria']
+            .asMap()
+            .entries
+            .map((entry) => EssayCriteria(
+                  criteriaNumber: entry.key + 1,
+                  criteriaText: entry.value['criteria'],
+                  maxScore: (entry.value['maxScore'] as num).toDouble(),
+                  id: entry.value['id'], // Store the original ID
+                ))
+            .toList();
 
         setState(() {
-          _initialData = IdentificationFormDataModel(
-            assessmentId: widget.assessmentId,
-            name: assessmentData['name'],
-            answers: questions,
+          _initialData = EssayData(
+            essayTitle: essayData['name'],
+            questions: List<EssayQuestion>.from(questions),
+            criteria: List<EssayCriteria>.from(criteria),
+            totalScore: criteria
+                .map((c) => c.maxScore)
+                .fold(0.0, (sum, score) => sum + score),
           );
           _isLoading = false;
         });
-
-        // For debugging
-        print('Initial Data: ${_initialData?.name}');
-        print('Number of answers: ${_initialData?.answers.length}');
-        for (var answer in _initialData?.answers ?? []) {
-          print('Question ${answer.number}: ${answer.answer}');
-        }
       }
     } catch (e) {
-      print('Error loading assessment data: $e');
+      print('Error loading essay data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load assessment data')),
+          const SnackBar(content: Text('Failed to load essay data')),
         );
       }
     }
@@ -81,25 +83,45 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
 
   Future<void> _handleSubmit(Map<String, dynamic> formData) async {
     try {
-      // Update assessment name if changed
-      if (_initialData!.name != formData['assessmentName']) {
-        await _identificationService.updateAssessment(
-          assessmentId: widget.assessmentId,
-          assessmentName: formData['assessmentName'],
+      final essayData = EssayData.fromJson(formData);
+
+      // Update essay title and total score if changed
+      if (_initialData!.essayTitle != essayData.essayTitle ||
+          _initialData!.totalScore != essayData.totalScore) {
+        await _essayService.updateEssay(
+          essayId: widget.essayId,
+          essayTitle: essayData.essayTitle,
         );
       }
 
       // Update questions
-      final answers = (formData['answers'] as List<IdentificationAnswer>);
-      final initialAnswers = _initialData!.answers;
+      for (int i = 0; i < essayData.questions.length; i++) {
+        if (i < _initialData!.questions.length) {
+          final questionId = _initialData!.questions[i].id;
+          if (questionId != null &&
+              essayData.questions[i].questionText !=
+                  _initialData!.questions[i].questionText) {
+            await _essayService.updateQuestion(
+              questionId: questionId,
+              questionText: essayData.questions[i].questionText,
+            );
+          }
+        }
+      }
 
-      for (int i = 0; i < answers.length; i++) {
-        if (i < initialAnswers.length) {
-          // Update existing question if answer changed
-          if (answers[i].answer != initialAnswers[i].answer) {
-            await _identificationService.updateQuestion(
-              questionId: initialAnswers[i].id,
-              answer: answers[i].answer,
+      // Update criteria
+      for (int i = 0; i < essayData.criteria.length; i++) {
+        if (i < _initialData!.criteria.length) {
+          final criteriaId = _initialData!.criteria[i].id;
+          if (criteriaId != null &&
+              (essayData.criteria[i].criteriaText !=
+                      _initialData!.criteria[i].criteriaText ||
+                  essayData.criteria[i].maxScore !=
+                      _initialData!.criteria[i].maxScore)) {
+            await _essayService.updateCriteria(
+              criteriaId: criteriaId,
+              criteriaText: essayData.criteria[i].criteriaText,
+              maxScore: essayData.criteria[i].maxScore,
             );
           }
         }
@@ -107,15 +129,15 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Assessment updated successfully')),
+          const SnackBar(content: Text('Essay updated successfully')),
         );
         Navigator.pop(context);
       }
-    } catch (e) {
-      print('Error updating assessment: $e');
+    } catch (e, stackTrace) {
+      debugPrint('Error updating essay: $e\n$stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update assessment')),
+          SnackBar(content: Text('Failed to update essay: ${e.toString()}')),
         );
       }
     }
@@ -132,7 +154,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Edit Assessment',
+          'Edit Essay',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 24,
@@ -146,7 +168,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
           : Column(
               children: [
                 Expanded(
-                  child: IdentificationForm(
+                  child: NewEssayForm(
                     controller: _formController,
                     onSubmit: _handleSubmit,
                     initialData: _initialData,
@@ -171,7 +193,8 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
                       _BottomButton(
                         imagePath: "assets/icons/assessment_scan.png",
                         label: 'Scan',
-                        onPressed: () => {
+                        onPressed: // TODO: Implement onPressed
+                            () => {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
