@@ -9,6 +9,17 @@ class EssayQuestion {
     required this.id,
   });
 
+  factory EssayQuestion.fromJson(Map<String, dynamic> json) {
+    return EssayQuestion(
+      questionNumber: json['questionNumber'] as int? ??
+          (json['question_number'] as int?) ??
+          1,
+      questionText:
+          json['questionText'] as String? ?? json['question'] as String,
+      id: json['id'] as String,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'questionNumber': questionNumber,
@@ -30,6 +41,18 @@ class EssayCriteria {
     required this.maxScore,
     required this.id,
   });
+
+  factory EssayCriteria.fromJson(Map<String, dynamic> json) {
+    return EssayCriteria(
+      criteriaNumber: json['criteriaNumber'] as int? ??
+          (json['criteria_number'] as int?) ??
+          1,
+      criteriaText:
+          json['criteriaText'] as String? ?? json['criteria'] as String,
+      maxScore: (json['maxScore'] as num).toDouble(),
+      id: json['id'] as String,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
