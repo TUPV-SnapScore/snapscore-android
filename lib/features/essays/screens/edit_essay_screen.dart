@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
 import 'package:snapscore_android/features/camera/widgets/camera.dart';
+import 'package:snapscore_android/features/essay_results/screens/essay_results_screen.dart';
 import 'package:snapscore_android/features/essays/models/essay_model.dart';
 import 'package:snapscore_android/features/essays/services/essay_submission_service.dart';
 import 'package:snapscore_android/features/essays/widgets/new_essay_form.dart';
@@ -204,8 +205,16 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                       _BottomButton(
                         imagePath: "assets/icons/assessment_results.png",
                         label: 'Results',
-                        onPressed: // TODO: Implement onPressed
-                            () => {},
+                        onPressed: () => {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EssayResultsScreen(
+                                assessmentId: widget.essayId,
+                              ),
+                            ),
+                          )
+                        },
                       ),
                     ],
                   ),

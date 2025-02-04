@@ -4,6 +4,7 @@ import 'package:snapscore_android/features/camera/widgets/camera.dart';
 import 'package:snapscore_android/features/identification/models/identification_model.dart';
 import 'package:snapscore_android/features/identification/services/identification_submission.dart';
 import 'package:snapscore_android/features/identification/widgets/identification_form.dart';
+import 'package:snapscore_android/features/identification_results/screens/identification_results_screen.dart';
 
 class EditIdentificationScreen extends StatefulWidget {
   final String assessmentId;
@@ -181,8 +182,17 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
                       _BottomButton(
                         imagePath: "assets/icons/assessment_results.png",
                         label: 'Results',
-                        onPressed: // TODO: Implement onPressed
-                            () => {},
+                        onPressed: () => {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => IdentificationResultsScreen(
+                                assessmentId: widget.assessmentId,
+                                assessmentName: 'Sample Test',
+                              ),
+                            ),
+                          )
+                        },
                       ),
                     ],
                   ),
