@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/identification_results/screens/student_results_screen.dart';
 import 'package:snapscore_android/features/identification_results/services/identification_result_service.dart';
 import 'package:snapscore_android/features/identification_results/widgets/identification_results_list.dart';
 import '../../../core/themes/colors.dart';
@@ -53,8 +54,13 @@ class _IdentificationResultsScreenState
   }
 
   void _handleStudentSelected(String resultId) {
-    // Navigate to detailed student result view
-    // TODO: Implement navigation to student detail screen
+    final result = _results.firstWhere((r) => r.id == resultId);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudentResultScreen(result: result),
+      ),
+    );
   }
 
   @override

@@ -61,51 +61,78 @@ class _StudentResultsListState extends State<StudentResultsList> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: filteredResults.length,
-            itemBuilder: (context, index) {
-              final result = filteredResults[index];
-              return InkWell(
-                onTap: () => widget.onStudentSelected(result.id),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.black),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: filteredResults.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.person, color: AppColors.textSecondary),
-                          const SizedBox(width: 12),
-                          Text(
-                            result.studentName,
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
+                      Icon(Icons.search_off,
+                          size: 64, color: AppColors.textSecondary),
+                      const SizedBox(height: 16),
                       Text(
-                        result.scoreText,
+                        'No students found',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textSecondary,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
+                )
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      filteredResults = widget.results;
+                      searchController.clear();
+                    });
+                  },
+                  child: ListView.builder(
+                    itemCount: filteredResults.length,
+                    itemBuilder: (context, index) {
+                      final result = filteredResults[index];
+                      return InkWell(
+                        onTap: () => widget.onStudentSelected(result.id),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.black),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.person,
+                                      color: AppColors.textSecondary),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    result.studentName,
+                                    style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                result.scoreText,
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
