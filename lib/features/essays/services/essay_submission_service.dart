@@ -63,11 +63,11 @@ class EssayService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/essay-assessment'),
+        Uri.parse('$baseUrl/essay-assessment/user'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': essayTitle,
-          'userId': userId,
+          'id': userId,
         }),
       );
 

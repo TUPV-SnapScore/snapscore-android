@@ -12,14 +12,11 @@ class IdentificationService {
       {required IdentificationAnswer answer,
       required String assessmentId}) async {
     try {
-      final response =
-          await http.post(Uri.parse('$baseUrl/identification-questions'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({
-                'question': answer.number.toString(),
-                'correctAnswer': answer.answer,
-                'assessmentId': assessmentId
-              }));
+      final response = await http.post(
+          Uri.parse('$baseUrl/identification-questions'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(
+              {'correctAnswer': answer.answer, 'assessmentId': assessmentId}));
 
       print(response.body);
 
@@ -38,9 +35,9 @@ class IdentificationService {
       required String userId}) async {
     try {
       final response = await http.post(
-          Uri.parse('$baseUrl/identification-assessment'),
+          Uri.parse('$baseUrl/identification-assessment/user'),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'name': assessmentName, 'userId': userId}));
+          body: jsonEncode({'name': assessmentName, 'id': userId}));
 
       final data = jsonDecode(response.body);
 

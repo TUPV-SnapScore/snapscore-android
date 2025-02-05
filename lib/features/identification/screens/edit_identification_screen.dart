@@ -182,7 +182,10 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Camera())),
+                                  builder: (context) => Camera(
+                                        assessmentId: widget.assessmentId,
+                                        assessmentName: _initialData!.name,
+                                      ))),
                         },
                       ),
                       _BottomButton(

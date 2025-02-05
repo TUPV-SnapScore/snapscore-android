@@ -3,6 +3,7 @@ class IdentificationResultModel {
   final String studentName;
   final String assessmentId; // Added this
   final DateTime createdAt; // Added this
+  final String paperImage;
   final List<QuestionResultModel>? questionResults; // Made optional
 
   IdentificationResultModel({
@@ -10,6 +11,7 @@ class IdentificationResultModel {
     required this.studentName,
     required this.assessmentId,
     required this.createdAt,
+    required this.paperImage,
     this.questionResults, // Made optional
   });
 
@@ -29,6 +31,7 @@ class IdentificationResultModel {
         createdAt: json['createdAt'] != null
             ? DateTime.parse(json['createdAt'])
             : DateTime.now(),
+        paperImage: json['paperImage']?.toString() ?? '',
         questionResults: json['questionResults'] != null
             ? (json['questionResults'] as List)
                 .map((result) => QuestionResultModel.fromJson(result))

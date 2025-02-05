@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/identification_results/screens/student_paper_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../models/identification_results_model.dart';
 import '../services/student_result_service.dart';
@@ -256,7 +257,11 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: Implement view paper functionality
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return StudentPaperScreen(
+                      imageUrl: widget.result.paperImage,
+                    );
+                  }));
                 },
                 child: Text('View Paper'),
               ),

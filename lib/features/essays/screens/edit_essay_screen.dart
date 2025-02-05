@@ -205,7 +205,11 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Camera())),
+                                  builder: (context) => Camera(
+                                        assessmentId: widget.essayId,
+                                        assessmentName:
+                                            _initialData!.essayTitle,
+                                      ))),
                         },
                       ),
                       _BottomButton(
