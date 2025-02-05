@@ -33,6 +33,7 @@ class _LoginFormState extends State<LoginForm> {
     setState(() => _isLoading = true);
 
     try {
+      final apiService = ApiService();
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.signInWithEmailPassword(
         _emailController.text.trim(),
@@ -41,6 +42,18 @@ class _LoginFormState extends State<LoginForm> {
 
       // Check if widget is still mounted before using context
       if (!mounted) return;
+
+      final userId =
+          Provider.of<AuthProvider>(context, listen: false).user?.uid ?? '';
+
+      if (userId.isEmpty) {
+        throw Exception('Failed to get user ID');
+      }
+
+      // Make the API call
+      final userData = await apiService.getUserByFirebaseId(userId: userId);
+
+      authProvider.setUserId(userData['id']);
 
       // Navigate to the AssessmentScreen (without having a back button or something)
       Navigator.pushAndRemoveUntil(
@@ -52,6 +65,9 @@ class _LoginFormState extends State<LoginForm> {
       // Successfully registered - AuthWrapper will handle navigation
     } catch (e) {
       setState(() => _isLoading = false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      await authProvider.signOut();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

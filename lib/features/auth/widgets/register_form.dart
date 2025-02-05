@@ -76,6 +76,9 @@ class _RegisterFormState extends State<RegisterForm> {
       );
     } catch (e) {
       setState(() => _isLoading = false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      await authProvider.signOut();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
