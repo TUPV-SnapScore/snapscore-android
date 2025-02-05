@@ -33,8 +33,6 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
   Future<void> _loadEssayData() async {
     try {
       final essayData = await _essayService.getEssay(widget.essayId);
-      print('Essay data: $essayData');
-
       if (mounted) {
         // Extract questions with IDs
         final questions = essayData['essayQuestions']
@@ -72,7 +70,6 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         });
       }
     } catch (e) {
-      print('Error loading essay data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -155,7 +152,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Edit Essay',
+          'SnapScore',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 24,
@@ -168,6 +165,16 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                const Center(
+                  child: Text(
+                    'Essay',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: NewEssayForm(
                     controller: _formController,
@@ -194,8 +201,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                       _BottomButton(
                         imagePath: "assets/icons/assessment_scan.png",
                         label: 'Scan',
-                        onPressed: // TODO: Implement onPressed
-                            () => {
+                        onPressed: () => {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -211,6 +217,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                             MaterialPageRoute(
                               builder: (context) => EssayResultsScreen(
                                 assessmentId: widget.essayId,
+                                essayTitle: _initialData!.essayTitle,
                               ),
                             ),
                           )
@@ -244,7 +251,8 @@ class _BottomButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            width: 100, // Fixed width for all buttons
+            padding: const EdgeInsets.symmetric(vertical: 1),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
@@ -254,12 +262,14 @@ class _BottomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
                   imagePath,
                   width: 24,
                   height: 24,
                 ),
+                const SizedBox(height: 4), // Consistent spacing
                 Text(
                   label,
                   style: const TextStyle(

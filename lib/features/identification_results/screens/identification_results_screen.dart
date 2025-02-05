@@ -53,14 +53,15 @@ class _IdentificationResultsScreenState
     }
   }
 
-  void _handleStudentSelected(String resultId) {
+  void _handleStudentSelected(String resultId) async {
     final result = _results.firstWhere((r) => r.id == resultId);
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StudentResultScreen(result: result),
       ),
-    );
+    ).then((_) =>
+        _loadResults()); // Reload results when returning from StudentResultScreen
   }
 
   @override
@@ -76,7 +77,7 @@ class _IdentificationResultsScreenState
         title: Text(
           widget.assessmentName,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: AppColors.textSecondary,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -86,12 +87,12 @@ class _IdentificationResultsScreenState
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
+            padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
             child: Text(
-              'Results',
+              'SnapScore',
               style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 20,
+                color: AppColors.textPrimary,
+                fontSize: 52,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -102,6 +103,7 @@ class _IdentificationResultsScreenState
                 : StudentResultsList(
                     results: _results,
                     onStudentSelected: _handleStudentSelected,
+                    onRefresh: _loadResults, // Add this line
                   ),
           ),
         ],

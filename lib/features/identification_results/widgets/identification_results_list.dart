@@ -5,11 +5,13 @@ import '../models/identification_results_model.dart';
 class StudentResultsList extends StatefulWidget {
   final List<IdentificationResultModel> results;
   final Function(String) onStudentSelected;
+  final Future<void> Function() onRefresh; // Add this line
 
   const StudentResultsList({
     Key? key,
     required this.results,
     required this.onStudentSelected,
+    required this.onRefresh, // Add this line
   }) : super(key: key);
 
   @override
@@ -37,10 +39,29 @@ class _StudentResultsListState extends State<StudentResultsList> {
     });
   }
 
+  Future<void> _handleRefresh() async {
+    await widget.onRefresh(); // Call the parent's refresh function
+    setState(() {
+      filteredResults = widget.results;
+      searchController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            'Results',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Container(
@@ -53,7 +74,9 @@ class _StudentResultsListState extends State<StudentResultsList> {
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Search students...',
-                prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                suffixIcon: const Icon(Icons.search),
+                prefixIcon: Image.asset('assets/icons/student_icon.png',
+                    width: 24, height: 24),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -80,12 +103,7 @@ class _StudentResultsListState extends State<StudentResultsList> {
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() {
-                      filteredResults = widget.results;
-                      searchController.clear();
-                    });
-                  },
+                  onRefresh: _handleRefresh, // Use the new handler
                   child: ListView.builder(
                     itemCount: filteredResults.length,
                     itemBuilder: (context, index) {
@@ -106,13 +124,13 @@ class _StudentResultsListState extends State<StudentResultsList> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.person,
-                                      color: AppColors.textSecondary),
+                                  Image.asset('assets/icons/student_icon.png',
+                                      width: 24, height: 24),
                                   const SizedBox(width: 12),
                                   Text(
                                     result.studentName,
                                     style: TextStyle(
-                                      color: AppColors.textPrimary,
+                                      color: AppColors.textSecondary,
                                       fontSize: 16,
                                     ),
                                   ),
@@ -121,9 +139,8 @@ class _StudentResultsListState extends State<StudentResultsList> {
                               Text(
                                 result.scoreText,
                                 style: TextStyle(
-                                  color: AppColors.textPrimary,
+                                  color: AppColors.textSecondary,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],

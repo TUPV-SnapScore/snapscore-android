@@ -68,9 +68,25 @@ class IdentificationService {
         Uri.parse('$baseUrl/identification-assessment/$assessmentId'),
         headers: {'Content-Type': 'application/json'},
       );
-      return jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          throw Exception('Empty response received');
+        }
+
+        final Map<String, dynamic> decodedData = json.decode(response.body);
+
+        // Ensure identificationQuestions is not null
+        if (decodedData['identificationQuestions'] == null) {
+          decodedData['identificationQuestions'] = [];
+        }
+
+        return decodedData;
+      } else {
+        throw Exception('Failed to load assessment: ${response.statusCode}');
+      }
     } catch (e) {
-      return {'error': true, 'message': 'Failed to fetch assessment: $e'};
+      throw Exception('Error fetching assessment: $e');
     }
   }
 

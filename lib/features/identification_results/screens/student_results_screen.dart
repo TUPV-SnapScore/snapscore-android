@@ -23,7 +23,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
   @override
   void initState() {
     super.initState();
-    questionResults = List.from(widget.result.questionResults);
+    questionResults = List.from(widget.result.questionResults ?? []);
   }
 
   Future<void> _updateQuestionResult(int index, bool isCorrect) async {
@@ -96,7 +96,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Results',
+          'SnapScore',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 24,
@@ -104,6 +104,12 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check, color: AppColors.textPrimary),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -111,9 +117,20 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'Results',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
                 Row(
                   children: [
-                    Icon(Icons.person, color: AppColors.textSecondary),
+                    Image.asset("assets/icons/rubric_item.png"),
                     const SizedBox(width: 8),
                     Text(
                       'Student',
@@ -125,17 +142,28 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  widget.result.studentName,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    widget.result.studentName,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
+                    Image.asset("assets/icons/rubric_item.png"),
+                    const SizedBox(width: 8),
                     Text(
                       'Results',
                       style: TextStyle(
@@ -145,11 +173,27 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                     ),
                     const Spacer(),
                     Text(
-                      'Total Score: $correctAnswers/${questionResults.length}',
+                      'Total Score: ',
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: AppColors.textSecondary,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '$correctAnswers/${questionResults.length}',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -170,29 +214,29 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                     border: Border.all(color: Colors.black),
                   ),
                   child: ListTile(
-                    leading: Icon(
-                      Icons.edit_note,
-                      color: AppColors.textSecondary,
-                    ),
-                    title: Row(
+                    leading: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        Image.asset("assets/icons/rubric_item.png"),
+                        const SizedBox(width: 12),
                         Text(
-                          '${index + 1}. ',
+                          '${index + 1}.',
                           style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          result.answer,
-                          style: TextStyle(
-                            color: result.isCorrect ? Colors.green : Colors.red,
+                            color: Colors.grey,
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
+                    title: Text(
+                      result.answer,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: result.isCorrect ? Colors.green : Colors.red,
+                      ),
+                    ),
                     trailing: IconButton(
-                      icon: Icon(Icons.more_vert),
+                      icon: Icon(Icons.more_horiz),
                       onPressed: () => _showAnswerOptions(index),
                     ),
                   ),

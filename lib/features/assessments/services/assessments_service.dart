@@ -43,14 +43,24 @@ class AssessmentsService {
         if (response.body.isEmpty) {
           return [];
         }
+
         final dynamic decodedData = json.decode(response.body);
-        final List<dynamic> jsonData =
-            decodedData is Map ? [decodedData] : decodedData as List;
-        return jsonData
-            .map((json) => IdentificationAssessment.fromJson(json))
-            .toList();
+
+        // Handle both single object and array responses
+        if (decodedData == null) {
+          return [];
+        } else if (decodedData is List) {
+          return decodedData
+              .map((json) => IdentificationAssessment.fromJson(json))
+              .toList();
+        } else if (decodedData is Map<String, dynamic>) {
+          return [IdentificationAssessment.fromJson(decodedData)];
+        }
+
+        return [];
       } else {
-        throw Exception('Failed to load identification assessments');
+        throw Exception(
+            'Failed to load identification assessments: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error fetching identification assessments: $e');

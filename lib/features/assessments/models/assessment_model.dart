@@ -115,13 +115,11 @@ class IdentificationAssessment {
 
 class IdentificationQuestion {
   final String id;
-  final String question;
   final String correctAnswer;
   final String assessmentId;
 
   IdentificationQuestion({
     required this.id,
-    required this.question,
     required this.correctAnswer,
     required this.assessmentId,
   });
@@ -129,7 +127,6 @@ class IdentificationQuestion {
   factory IdentificationQuestion.fromJson(Map<String, dynamic> json) {
     return IdentificationQuestion(
       id: json['id'],
-      question: json['question'],
       correctAnswer: json['correctAnswer'],
       assessmentId: json['assessmentId'],
     );

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/core/themes/colors.dart';
 import 'package:snapscore_android/features/essay_results/models/essay_results_model.dart';
+import 'package:snapscore_android/features/essay_results/screens/student_result_screen.dart';
 
 class StudentResultsList extends StatefulWidget {
   final List<EssayResult> results;
   final String searchQuery;
   final Function(String) onSearch;
+  final Future<void> Function() onRefresh;
 
   const StudentResultsList({
     super.key,
     required this.results,
     required this.searchQuery,
     required this.onSearch,
+    required this.onRefresh,
   });
 
   @override
@@ -29,6 +33,11 @@ class _StudentResultsListState extends State<StudentResultsList> {
         .toList();
   }
 
+  Future<void> _handleRefresh() async {
+    await widget.onRefresh();
+    widget.onSearch('');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -45,7 +54,9 @@ class _StudentResultsListState extends State<StudentResultsList> {
               onChanged: widget.onSearch,
               decoration: InputDecoration(
                 hintText: 'Search students...',
-                prefixIcon: const Icon(Icons.search),
+                suffixIcon: const Icon(Icons.search),
+                prefixIcon: Image.asset('assets/icons/student_icon.png',
+                    width: 24, height: 24),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -56,33 +67,54 @@ class _StudentResultsListState extends State<StudentResultsList> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: filteredResults.length,
-            itemBuilder: (context, index) {
-              final result = filteredResults[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.black),
-                ),
-                child: ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(result.studentName),
-                  trailing: Text(
-                    result.totalScore.toStringAsFixed(0),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            child: ListView.builder(
+              itemCount: filteredResults.length,
+              itemBuilder: (context, index) {
+                final result = filteredResults[index];
+                return Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.black),
                   ),
-                  onTap: () {
-                    // Navigate to detailed results view
-                  },
-                ),
-              );
-            },
+                  child: ListTile(
+                    leading: Image.asset('assets/icons/student_icon.png',
+                        width: 24, height: 24),
+                    title: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        result.studentName,
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                    trailing: SizedBox(
+                      width: 50,
+                      child: Text(
+                        result.totalScore.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              EssayStudentResultScreen(result: result),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
