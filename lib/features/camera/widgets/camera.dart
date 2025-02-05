@@ -6,9 +6,14 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
+import 'package:snapscore_android/features/camera/services/camera_service.dart';
 
 class Camera extends StatefulWidget {
-  const Camera({super.key});
+  final String assessmentName;
+  final String assessmentId;
+
+  const Camera(
+      {super.key, required this.assessmentName, required this.assessmentId});
 
   @override
   CameraState createState() => CameraState();
@@ -21,6 +26,7 @@ class CameraState extends State<Camera> {
   bool _isReviewing = false;
   bool _isSaving = false;
   FlashMode _currentFlashMode = FlashMode.off;
+  final cameraService = CameraService();
 
   @override
   void initState() {
@@ -161,71 +167,94 @@ class CameraState extends State<Camera> {
     }
   }
 
-  Future<void> _saveToGallery() async {
+  Future<void> _uploadPhoto() async {
     if (_capturedImage == null || !_isReviewing) return;
 
     try {
-      setState(() => _isSaving = true);
+      setState(() {
+        _isSaving = true;
+      });
 
-      if (Platform.isAndroid) {
-        // Request storage permissions
-        final storageStatus = await Permission.storage.request();
-        final mediaStatus = await Permission.photos.request();
+      await cameraService.uploadIdentificationImage(
+        _capturedImage!,
+        widget.assessmentId,
+      );
 
-        if (!storageStatus.isGranted || !mediaStatus.isGranted) {
-          throw Exception('Storage permission is required');
-        }
-
-        // Get the external storage directory
-        final directory = await getExternalStorageDirectory();
-        if (directory == null) throw Exception('Could not access storage');
-
-        // Create a Pictures directory if it doesn't exist
-        final picturesDir = Directory('${directory.path}/Pictures/SnapScore');
-        if (!await picturesDir.exists()) {
-          await picturesDir.create(recursive: true);
-        }
-
-        // Create unique filename
-        final fileName =
-            'SnapScore_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final savedImage =
-            await _capturedImage!.copy('${picturesDir.path}/$fileName');
-
-        // Use platform channel to notify media scanner
-        await const MethodChannel('snapscore_channel').invokeMethod(
-          'scanFile',
-          {'path': savedImage.path},
-        );
-
-        if (mounted) {
-          ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-            const SnackBar(
-              content: Text('Image saved successfully!'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      } else if (Platform.isIOS) {
-        // For iOS, we'll need to implement PHPhotoLibrary saving
-        // This is a placeholder for iOS implementation
-        throw Exception('iOS implementation pending');
-      }
+      _resetCamera();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-          SnackBar(
-            content: Text('Error saving image: $e'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      print('Error uploading image: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
+
+  // Future<void> _saveToGallery() async {
+  //   if (_capturedImage == null || !_isReviewing) return;
+
+  //   try {
+  //     setState(() => _isSaving = true);
+
+  //     if (Platform.isAndroid) {
+  //       // Request storage permissions
+  //       final storageStatus = await Permission.storage.request();
+  //       final mediaStatus = await Permission.photos.request();
+
+  //       if (!storageStatus.isGranted || !mediaStatus.isGranted) {
+  //         throw Exception('Storage permission is required');
+  //       }
+
+  //       // Get the external storage directory
+  //       final directory = await getExternalStorageDirectory();
+  //       if (directory == null) throw Exception('Could not access storage');
+
+  //       // Create a Pictures directory if it doesn't exist
+  //       final picturesDir = Directory('${directory.path}/Pictures/SnapScore');
+  //       if (!await picturesDir.exists()) {
+  //         await picturesDir.create(recursive: true);
+  //       }
+
+  //       // Create unique filename
+  //       final fileName =
+  //           'SnapScore_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  //       final savedImage =
+  //           await _capturedImage!.copy('${picturesDir.path}/$fileName');
+
+  //       // Use platform channel to notify media scanner
+  //       await const MethodChannel('snapscore_channel').invokeMethod(
+  //         'scanFile',
+  //         {'path': savedImage.path},
+  //       );
+
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+  //           const SnackBar(
+  //             content: Text('Image saved successfully!'),
+  //             duration: Duration(seconds: 2),
+  //           ),
+  //         );
+  //       }
+  //     } else if (Platform.isIOS) {
+  //       // For iOS, we'll need to implement PHPhotoLibrary saving
+  //       // This is a placeholder for iOS implementation
+  //       throw Exception('iOS implementation pending');
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Error saving image: $e'),
+  //           duration: const Duration(seconds: 2),
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _isSaving = false);
+  //     }
+  //   }
+  // }
 
   Widget _buildCornerMarker() {
     return Container(
@@ -372,7 +401,7 @@ class CameraState extends State<Camera> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: TextButton(
-                onPressed: _isSaving ? null : _saveToGallery,
+                onPressed: _isSaving ? null : _uploadPhoto,
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
