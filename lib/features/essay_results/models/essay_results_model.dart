@@ -6,6 +6,7 @@ class EssayResult {
   final String assessmentId;
   final List<EssayQuestionResult> questionResults;
   final double totalScore;
+  final String imageUrl;
 
   EssayResult({
     required this.id,
@@ -13,11 +14,13 @@ class EssayResult {
     required this.assessmentId,
     required this.questionResults,
     required this.totalScore,
+    required this.imageUrl,
   });
 
   factory EssayResult.fromJson(Map<String, dynamic> json) {
     return EssayResult(
-      id: json['id']?.toString() ?? '', // Convert to string and provide default
+      id: json['id']?.toString() ?? '',
+      imageUrl: json['paperImage']?.toString() ?? '',
       studentName: json['studentName']?.toString() ?? 'Unknown Student',
       assessmentId: json['assessmentId']?.toString() ?? '',
       questionResults: (json['questionResults'] as List?)

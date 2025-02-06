@@ -62,6 +62,7 @@ class EssayService {
     required String userId,
   }) async {
     try {
+      // Create essay
       final response = await http.post(
         Uri.parse('$baseUrl/essay-assessment/user'),
         headers: {'Content-Type': 'application/json'},
@@ -79,18 +80,19 @@ class EssayService {
 
       final essayId = data['id'];
 
-      // Create questions
-      String? firstQuestionId;
+      // Create questions and associate criteria with each question
       for (var question in questions) {
         final questionResponse =
             await _createEssayQuestion(question: question, essayId: essayId);
-        firstQuestionId ??= questionResponse['id'];
-      }
+        final questionId = questionResponse['id'];
 
-      // Create criteria
-      for (var criterion in criteria) {
-        await _createEssayCriteria(
-            criteria: criterion, essayId: firstQuestionId!);
+        // Create criteria for this specific question
+        for (var criterion in criteria) {
+          await _createEssayCriteria(
+              criteria: criterion,
+              essayId: questionId // Associate with current question
+              );
+        }
       }
 
       return data;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
 import 'package:snapscore_android/features/camera/widgets/camera.dart';
+import 'package:snapscore_android/features/camera/widgets/essay_camera.dart';
 import 'package:snapscore_android/features/essay_results/screens/essay_results_screen.dart';
 import 'package:snapscore_android/features/essays/models/essay_model.dart';
 import 'package:snapscore_android/features/essays/services/essay_submission_service.dart';
@@ -205,7 +206,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Camera(
+                                  builder: (context) => EssayCamera(
                                         assessmentId: widget.essayId,
                                         assessmentName:
                                             _initialData!.essayTitle,

@@ -61,6 +61,51 @@ class CameraService {
     }
   }
 
+  Future<Map<String, dynamic>> uploadEssayImage(
+    File photoFile,
+    String assessmentId,
+  ) async {
+    try {
+      final uri = Uri.parse('$baseUrl/essay/$assessmentId');
+
+      // Create multipart request
+      final request = http.MultipartRequest('POST', uri);
+
+      // Validate file size before upload (5MB limit)
+      final fileLength = await photoFile.length();
+      if (fileLength > 5 * 1024 * 1024) {
+        throw Exception('File size exceeds 5MB limit');
+      }
+
+      // Add file to request
+      final fileStream = http.ByteStream(photoFile.openRead());
+      final multipartFile = http.MultipartFile(
+        'image',
+        fileStream,
+        fileLength,
+        filename: photoFile.path.split('/').last,
+        contentType: MediaType('image', 'jpeg'),
+      );
+
+      request.files.add(multipartFile);
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 201 && response.statusCode != 200) {
+        throw HttpException(
+          'Server returned status code: ${response.statusCode} with body: ${response.body}',
+        );
+      }
+
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      print('Error uploading essay: $e');
+      rethrow;
+    }
+  }
+
   // Keep the original uploadPicture method for general file uploads
   Future<Map<String, dynamic>> uploadPicture(
       File photoFile, String filePath) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/identification_results/screens/student_paper_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../models/essay_results_model.dart';
 import 'package:http/http.dart' as http;
@@ -335,7 +336,13 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: Implement view paper functionality
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          StudentPaperScreen(imageUrl: widget.result.imageUrl),
+                    ),
+                  );
                 },
                 child: const Text(
                   'View Paper',
