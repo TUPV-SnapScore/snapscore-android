@@ -78,7 +78,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
         Expanded(
           flex: 3,
           child: Text(
-            '${criteria.criteria.criteria} (${criteria.criteria.maxScore.toInt()})',
+            '${criteria.criteria?.criteria} (${criteria.criteria?.maxScore.toInt()})',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 16,
@@ -132,7 +132,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
     double totalScore = _selectedQuestion.essayCriteriaResults
         .fold(0, (sum, criteria) => sum + criteria.score);
     double maxScore = _selectedQuestion.essayCriteriaResults
-        .fold(0, (sum, criteria) => sum + criteria.criteria.maxScore);
+        .fold(0, (sum, criteria) => sum + (criteria.criteria?.maxScore ?? 0));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -230,7 +230,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                         items: widget.result.questionResults.map((question) {
                           return DropdownMenuItem(
                             value: question,
-                            child: Text(question.question.question),
+                            child: Text(question.question?.question ?? ''),
                           );
                         }).toList(),
                         onChanged: (value) {

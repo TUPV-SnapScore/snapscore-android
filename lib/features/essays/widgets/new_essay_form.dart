@@ -33,59 +33,6 @@ class _NewEssayFormState extends State<NewEssayForm> {
   final TextEditingController titleController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.submitForm = _submitForm;
-
-    if (widget.initialData != null) {
-      titleController.text = widget.initialData!.essayTitle;
-      selectedQuestions = widget.initialData!.questions.length;
-
-      for (var question in widget.initialData!.questions) {
-        questionControllers.add(TextEditingController(text: question.question));
-      }
-
-      for (var criterion in widget.initialData!.criteria) {
-        criteriaControllers
-            .add(TextEditingController(text: criterion.criteria));
-        criteriaScoreControllers
-            .add(TextEditingController(text: criterion.maxScore.toString()));
-
-        // Initialize rubric levels from existing data
-        List<RubricLevel> levels = criterion.rubrics
-            .map((r) => RubricLevel(
-                score: int.parse(r.score),
-                description: r.description,
-                controller: TextEditingController(text: r.description)))
-            .toList();
-        rubricLevels.add(levels);
-      }
-    } else {
-      // Default initialization
-      selectedQuestions = questionOptions.first;
-      questionControllers.add(TextEditingController());
-      criteriaControllers.add(TextEditingController());
-      criteriaScoreControllers.add(TextEditingController());
-
-      // Initialize with 3 default rubric levels
-      rubricLevels.add([
-        RubricLevel(
-            score: 20,
-            description: "Excellent",
-            controller: TextEditingController(text: "Excellent performance")),
-        RubricLevel(
-            score: 15,
-            description: "Good",
-            controller: TextEditingController(text: "Good performance")),
-        RubricLevel(
-            score: 10,
-            description: "Needs Improvement",
-            controller: TextEditingController(text: "Needs improvement")),
-      ]);
-    }
-  }
-
   Future<void> _submitForm() async {
     if (titleController.text.isEmpty) {
       throw Exception('Please enter an essay title');
@@ -130,7 +77,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
         rubrics.add(Rubric(
           id: 'temp_r${rubrics.length + 1}',
           score: level.score.toString(),
-          description: level.controller.text,
+          description: level.description,
           criteriaId: widget.initialData?.criteria[i].id ?? 'temp_c${i + 1}',
         ));
       }
@@ -158,14 +105,55 @@ class _NewEssayFormState extends State<NewEssayForm> {
     ).toJson();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.submitForm = _submitForm;
+
+    if (widget.initialData != null) {
+      titleController.text = widget.initialData!.essayTitle;
+      selectedQuestions = widget.initialData!.questions.length;
+
+      for (var question in widget.initialData!.questions) {
+        questionControllers.add(TextEditingController(text: question.question));
+      }
+
+      for (var criterion in widget.initialData!.criteria) {
+        criteriaControllers
+            .add(TextEditingController(text: criterion.criteria));
+        criteriaScoreControllers
+            .add(TextEditingController(text: criterion.maxScore.toString()));
+
+        // Initialize rubric levels from existing data
+        List<RubricLevel> levels = criterion.rubrics
+            .map((r) => RubricLevel(
+                initialScore: int.parse(r.score), description: r.description))
+            .toList();
+        rubricLevels.add(levels);
+      }
+    } else {
+      // Default initialization
+      selectedQuestions = questionOptions.first;
+      questionControllers.add(TextEditingController());
+      criteriaControllers.add(TextEditingController());
+      criteriaScoreControllers.add(TextEditingController());
+
+      // Initialize with 3 default rubric levels
+      rubricLevels.add([
+        RubricLevel(initialScore: 20, description: "Excellent performance"),
+        RubricLevel(initialScore: 15, description: "Good performance"),
+        RubricLevel(initialScore: 10, description: "Needs improvement"),
+      ]);
+    }
+  }
+
   void addRubricLevel(int criteriaIndex) {
     if (rubricLevels[criteriaIndex].length < 5) {
       setState(() {
         rubricLevels[criteriaIndex].add(
           RubricLevel(
-            score: 5,
+            initialScore: 5,
             description: "",
-            controller: TextEditingController(),
           ),
         );
       });
@@ -176,9 +164,78 @@ class _NewEssayFormState extends State<NewEssayForm> {
     if (rubricLevels[criteriaIndex].length > 3) {
       setState(() {
         final level = rubricLevels[criteriaIndex].removeAt(levelIndex);
-        level.controller.dispose();
+        level.dispose();
       });
     }
+  }
+
+  // Update the build method for rubric levels
+  Widget _buildRubricLevels(int criteriaIndex) {
+    return Column(
+      children: [
+        ...List.generate(
+          rubricLevels[criteriaIndex].length,
+          (levelIndex) => Padding(
+            padding: const EdgeInsets.only(left: 32, bottom: 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 60,
+                  child: TextField(
+                    controller:
+                        rubricLevels[criteriaIndex][levelIndex].scoreController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                      suffix: Text('pts'),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('-'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildTextField(
+                    hintText: 'Rubric description',
+                    controller:
+                        rubricLevels[criteriaIndex][levelIndex].controller,
+                  ),
+                ),
+                if (rubricLevels[criteriaIndex].length > 3)
+                  IconButton(
+                    icon: Icon(Icons.remove_circle_outline,
+                        color: AppColors.error),
+                    onPressed: () =>
+                        removeRubricLevel(criteriaIndex, levelIndex),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (rubricLevels[criteriaIndex].length < 5)
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: TextButton(
+              onPressed: () => addRubricLevel(criteriaIndex),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Add Rubric Level',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   void updateQuestionFields(int count) {
@@ -235,6 +292,17 @@ class _NewEssayFormState extends State<NewEssayForm> {
       total += double.tryParse(controller.text) ?? 0;
     }
     setState(() {});
+  }
+
+  @override
+  void dispose() {
+    // Dispose of all controllers
+    for (var levels in rubricLevels) {
+      for (var level in levels) {
+        level.dispose();
+      }
+    }
+    super.dispose();
   }
 
   @override
@@ -498,13 +566,20 @@ class _NewEssayFormState extends State<NewEssayForm> {
 }
 
 class RubricLevel {
-  final int score;
-  final String description;
+  final TextEditingController scoreController;
   final TextEditingController controller;
 
   RubricLevel({
-    required this.score,
-    required this.description,
-    required this.controller,
-  });
+    required int initialScore,
+    required String description,
+  })  : scoreController = TextEditingController(text: initialScore.toString()),
+        controller = TextEditingController(text: description);
+
+  int get score => int.tryParse(scoreController.text) ?? 0;
+  String get description => controller.text;
+
+  void dispose() {
+    scoreController.dispose();
+    controller.dispose();
+  }
 }

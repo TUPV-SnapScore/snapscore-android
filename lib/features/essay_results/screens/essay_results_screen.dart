@@ -43,6 +43,7 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        print(e);
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading results: $e')),

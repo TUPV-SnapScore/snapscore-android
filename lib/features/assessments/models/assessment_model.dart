@@ -19,14 +19,19 @@ class EssayAssessment {
 
   factory EssayAssessment.fromJson(Map<String, dynamic> json) {
     return EssayAssessment(
-      id: json['id'],
-      name: json['name'],
-      essayQuestions: (json['essayQuestions'] as List)
-          .map((q) => EssayQuestion.fromJson(q))
-          .toList(),
-      userId: json['userId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      essayQuestions: (json['essayQuestions'] as List?)
+              ?.map((q) => EssayQuestion.fromJson(q))
+              .toList() ??
+          [],
+      userId: json['userId'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
       essayResults: (json['essayResults'] as List?)
               ?.map((r) => EssayResult.fromJson(r))
               .toList() ??
@@ -66,14 +71,19 @@ class EssayQuestion {
 
   factory EssayQuestion.fromJson(Map<String, dynamic> json) {
     return EssayQuestion(
-      id: json['id'],
-      question: json['question'],
-      essayCriteria: (json['essayCriteria'] as List)
-          .map((c) => EssayCriteria.fromJson(c))
-          .toList(),
-      assessmentId: json['assessmentId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id'] ?? '',
+      question: json['question'] ?? '',
+      essayCriteria: (json['essayCriteria'] as List?)
+              ?.map((c) => EssayCriteria.fromJson(c))
+              .toList() ??
+          [],
+      assessmentId: json['assessmentId'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
     );
   }
 
@@ -110,14 +120,19 @@ class EssayCriteria {
 
   factory EssayCriteria.fromJson(Map<String, dynamic> json) {
     return EssayCriteria(
-      id: json['id'],
-      criteria: json['criteria'],
-      maxScore: json['maxScore'],
+      id: json['id'] ?? '',
+      criteria: json['criteria'] ?? '',
+      maxScore: json['maxScore'] ?? 0,
       rubrics:
-          (json['rubrics'] as List).map((r) => Rubric.fromJson(r)).toList(),
-      essayQuestionId: json['essayQuestionId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+          (json['rubrics'] as List?)?.map((r) => Rubric.fromJson(r)).toList() ??
+              [],
+      essayQuestionId: json['essayQuestionId'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
     );
   }
 
@@ -149,10 +164,10 @@ class Rubric {
 
   factory Rubric.fromJson(Map<String, dynamic> json) {
     return Rubric(
-      id: json['id'],
-      score: json['score'],
-      description: json['description'],
-      criteriaId: json['criteriaId'],
+      id: json['id'] ?? '',
+      score: json['score'] ?? '',
+      description: json['description'] ?? '',
+      criteriaId: json['criteriaId'] ?? '',
     );
   }
 
@@ -187,15 +202,18 @@ class EssayResult {
 
   factory EssayResult.fromJson(Map<String, dynamic> json) {
     return EssayResult(
-      id: json['id'],
-      studentName: json['studentName'],
-      score: json['score'],
-      paperImage: json['paperImage'],
-      assessmentId: json['assessmentId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      questionResults: (json['questionResults'] as List)
-          .map((qr) => EssayQuestionResult.fromJson(qr))
-          .toList(),
+      id: json['id'] ?? '',
+      studentName: json['studentName'] ?? '',
+      score: json['score'] ?? 0,
+      paperImage: json['paperImage'] ?? '',
+      assessmentId: json['assessmentId'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      questionResults: (json['questionResults'] as List?)
+              ?.map((qr) => EssayQuestionResult.fromJson(qr))
+              .toList() ??
+          [],
     );
   }
 
