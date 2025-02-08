@@ -1,20 +1,25 @@
 class IdentificationResultModel {
   final String id;
   final String studentName;
-  final List<QuestionResultModel> questionResults;
+  final String assessmentId; // Added this
+  final DateTime createdAt; // Added this
+  final String paperImage;
+  final List<QuestionResultModel>? questionResults; // Made optional
 
   IdentificationResultModel({
     required this.id,
     required this.studentName,
-    required this.questionResults,
+    required this.assessmentId,
+    required this.createdAt,
+    required this.paperImage,
+    this.questionResults, // Made optional
   });
 
-  // Add getters for score components
+  // Update score calculations to handle null questionResults
   int get correctAnswers =>
-      questionResults.where((result) => result.isCorrect).length;
-  int get totalQuestions => questionResults.length;
+      questionResults?.where((result) => result.isCorrect).length ?? 0;
+  int get totalQuestions => questionResults?.length ?? 0;
 
-  // Get score in format "X/Y"
   String get scoreText => '$correctAnswers/$totalQuestions';
 
   factory IdentificationResultModel.fromJson(Map<String, dynamic> json) {
@@ -22,10 +27,16 @@ class IdentificationResultModel {
       return IdentificationResultModel(
         id: json['id']?.toString() ?? '',
         studentName: json['studentName']?.toString() ?? 'Unknown Student',
-        questionResults: (json['questionResults'] as List?)
-                ?.map((result) => QuestionResultModel.fromJson(result))
-                .toList() ??
-            [],
+        assessmentId: json['assessmentId']?.toString() ?? '',
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'])
+            : DateTime.now(),
+        paperImage: json['paperImage']?.toString() ?? '',
+        questionResults: json['questionResults'] != null
+            ? (json['questionResults'] as List)
+                .map((result) => QuestionResultModel.fromJson(result))
+                .toList()
+            : null,
       );
     } catch (e) {
       print('Error parsing IdentificationResultModel: $json');

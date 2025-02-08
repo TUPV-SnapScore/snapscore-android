@@ -14,6 +14,7 @@ class EssayService {
     required List<EssayQuestion> questions,
   }) async {
     try {
+      // Create essay
       final response = await http.post(
         Uri.parse('$baseUrl/essay-assessment/user'),
         headers: {'Content-Type': 'application/json'},

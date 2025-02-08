@@ -167,20 +167,6 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
                     onPressed: _handleSave,
                   ),
                 ),
-                Expanded(
-                  child: _BottomButton(
-                    imagePath: "assets/icons/assessment_scan.png",
-                    label: 'Scan',
-                    onPressed: () {},
-                  ),
-                ),
-                Expanded(
-                  child: _BottomButton(
-                    imagePath: "assets/icons/assessment_results.png",
-                    label: 'Results',
-                    onPressed: () {},
-                  ),
-                ),
               ],
             ),
           ),
@@ -209,7 +195,8 @@ class _BottomButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            width: 100, // Fixed width for all buttons
+            padding: const EdgeInsets.symmetric(vertical: 1),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
@@ -219,12 +206,14 @@ class _BottomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
                   imagePath,
                   width: 24,
                   height: 24,
                 ),
+                const SizedBox(height: 4), // Consistent spacing
                 Text(
                   label,
                   style: const TextStyle(

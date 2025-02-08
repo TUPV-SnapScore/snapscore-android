@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/identification_results/screens/student_paper_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../models/essay_results_model.dart';
 import 'package:http/http.dart' as http;
@@ -97,12 +98,14 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
           width: 60,
           height: 40,
           decoration: BoxDecoration(
+            color: Colors.white,
             border: Border.all(color: Colors.black),
             borderRadius: BorderRadius.circular(4),
           ),
           child: TextField(
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
+            style: const TextStyle(color: Colors.grey),
             controller: TextEditingController(
               text: criteria.score.toStringAsFixed(0),
             ),
@@ -115,7 +118,8 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
             },
             decoration: const InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 8),
+              contentPadding: EdgeInsets.symmetric(vertical: 8),
+              isDense: true,
             ),
           ),
         ),
@@ -147,161 +151,218 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check, color: AppColors.textPrimary),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Student Section
-              Row(
-                children: [
-                  Icon(Icons.person, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Student',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Student Section
+                    Row(
+                      children: [
+                        Image.asset("assets/icons/rubric_item.png"),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Student',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.result.studentName,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Question Dropdown
-              Row(
-                children: [
-                  Icon(Icons.question_answer, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Question',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: DropdownButton<EssayQuestionResult>(
-                  value: _selectedQuestion,
-                  isExpanded: true,
-                  underline: Container(),
-                  items: widget.result.questionResults.map((question) {
-                    return DropdownMenuItem(
-                      value: question,
-                      child: Text(question.question.question),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedQuestion = value);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Answer Section
-              Row(
-                children: [
-                  Icon(Icons.edit_note, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Answer',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(_selectedQuestion.answer),
-              ),
-              const SizedBox(height: 24),
-
-              // Results Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.assessment, color: AppColors.textSecondary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Results',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 16,
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.result.studentName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
-                  Text(
-                    'Total Score: ${totalScore.toInt()}/${maxScore.toInt()}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-              // Criteria Scores
-              ...(_selectedQuestion.essayCriteriaResults.map((criteria) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: _buildCriteriaScoreField(criteria),
-                );
-              })),
-
-              const SizedBox(height: 24),
-
-              // View Paper Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    // Question Dropdown
+                    Row(
+                      children: [
+                        Image.asset("assets/icons/rubric_item.png"),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Question',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  onPressed: () {
-                    // TODO: Implement view paper functionality
-                  },
-                  child: const Text('View Paper'),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<EssayQuestionResult>(
+                        value: _selectedQuestion,
+                        isExpanded: true,
+                        underline: Container(),
+                        items: widget.result.questionResults.map((question) {
+                          return DropdownMenuItem(
+                            value: question,
+                            child: Text(question.question.question),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedQuestion = value);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Answer Section
+                    Row(
+                      children: [
+                        Image.asset("assets/icons/rubric_item.png"),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Answer',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(_selectedQuestion.answer),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Results Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Image.asset("assets/icons/rubric_item.png"),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Results',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              'Total Score: ',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(color: Colors.black),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${totalScore.toInt()}/${maxScore.toInt()}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Criteria Scores
+                    ...(_selectedQuestion.essayCriteriaResults.map((criteria) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildCriteriaScoreField(criteria),
+                      );
+                    })),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Colors.black, width: 1),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentPaperScreen(
+                          imageUrl: widget.result.paperImage),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'View Paper',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
