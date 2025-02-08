@@ -69,6 +69,9 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
         questions: questions,
       );
 
+      print(questions);
+      print(result);
+
       if (result['error'] == true) {
         throw Exception(result['message']);
       }

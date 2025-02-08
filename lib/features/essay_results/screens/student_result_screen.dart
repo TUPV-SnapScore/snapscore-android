@@ -48,7 +48,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
       // Update local state
       setState(() {
         final criteriaIndex = _selectedQuestion.essayCriteriaResults
-            .indexWhere((criteria) => criteria.id == criteriaId);
+            .indexWhere((criteria) => criteria.criteriaId == criteriaId);
         if (criteriaIndex != -1) {
           _selectedQuestion.essayCriteriaResults[criteriaIndex] =
               EssayCriteriaResult(
@@ -58,8 +58,6 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                 .essayCriteriaResults[criteriaIndex].criteriaId,
             questionResultId: _selectedQuestion
                 .essayCriteriaResults[criteriaIndex].questionResultId,
-            criteria:
-                _selectedQuestion.essayCriteriaResults[criteriaIndex].criteria,
           );
         }
       });
@@ -73,66 +71,109 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
   }
 
   Widget _buildCriteriaScoreField(EssayCriteriaResult criteria) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Text(
-            '${criteria.criteria?.criteria} (${criteria.criteria?.maxScore.toInt()})',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 16,
-            ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.black.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Text(
+                  '${criteria.criteria?.criteria ?? "Unknown Criteria"} (${criteria.criteria?.maxScore ?? 0})',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Score:',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 60,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.black.withOpacity(0.2)),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: TextField(
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.grey),
+                  controller: TextEditingController(
+                    text: criteria.score.toString(),
+                  ),
+                  enabled: !_isUpdating,
+                  onSubmitted: (value) {
+                    final newScore = double.tryParse(value);
+                    if (newScore != null) {
+                      _updateCriteriaScore(criteria.id, newScore);
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'Score:',
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 60,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.black),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: TextField(
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            style: const TextStyle(color: Colors.grey),
-            controller: TextEditingController(
-              text: criteria.score.toStringAsFixed(0),
-            ),
-            enabled: !_isUpdating,
-            onSubmitted: (value) {
-              final newScore = double.tryParse(value);
-              if (newScore != null) {
-                _updateCriteriaScore(criteria.id, newScore);
-              }
-            },
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 8),
-              isDense: true,
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  // Helper function to get criteria name based on ID
+  String getCriteriaName(String criteriaId, int maxScore) {
+    // This should be replaced with actual criteria names from your system
+    // For now using placeholder names based on the example response
+    Map<String, String> criteriaNames = {
+      '67a73ba06df187d8f89efc02': 'Content & Understanding',
+      '67a73ba16df187d8f89efc06': 'Organization & Coherence',
+      '67a73ba16df187d8f89efc0a': 'Grammar & Mechanics',
+      '67a73ba26df187d8f89efc0e': 'Relevance & Analysis',
+    };
+
+    return '${criteriaNames[criteriaId] ?? 'Criteria'} ($maxScore)';
+  }
+
+  // Helper function to get question text based on ID
+  String getQuestionText(String questionId) {
+    // This should be replaced with actual question texts from your system
+    Map<String, String> questionTexts = {
+      '67a73ba06df187d8f89efc02':
+          'How has the life and works of Jose Rizal impacted you?',
+    };
+
+    return questionTexts[questionId] ?? 'Question';
   }
 
   @override
   Widget build(BuildContext context) {
-    double totalScore = _selectedQuestion.essayCriteriaResults
-        .fold(0, (sum, criteria) => sum + criteria.score);
-    double maxScore = _selectedQuestion.essayCriteriaResults
+    // Calculate total score from the actual score property
+    int totalScore = widget.result.score;
+
+    // Calculate max possible score by summing up max scores from criteria
+    int maxPossibleScore = _selectedQuestion.essayCriteriaResults
         .fold(0, (sum, criteria) => sum + (criteria.criteria?.maxScore ?? 0));
+
+    // Rest of the build method remains the same...
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -151,12 +192,6 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check, color: AppColors.textPrimary),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -168,59 +203,21 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Student Section
-                    Row(
-                      children: [
-                        Image.asset("assets/icons/rubric_item.png"),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Student',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildSectionHeader('Student', 'rubric_item'),
                     const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.black),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.result.studentName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    _buildInfoContainer(widget.result.studentName),
                     const SizedBox(height: 24),
 
-                    // Question Dropdown
-                    Row(
-                      children: [
-                        Image.asset("assets/icons/rubric_item.png"),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Question',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
+                    // Question Section
+                    _buildSectionHeader('Question', 'rubric_item'),
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border.all(color: Colors.black),
+                        border:
+                            Border.all(color: Colors.black.withOpacity(0.1)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButton<EssayQuestionResult>(
@@ -230,7 +227,9 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                         items: widget.result.questionResults.map((question) {
                           return DropdownMenuItem(
                             value: question,
-                            child: Text(question.question?.question ?? ''),
+                            child: Text(
+                              question.question?.question ?? 'Unknown Question',
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -243,49 +242,16 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                     const SizedBox(height: 24),
 
                     // Answer Section
-                    Row(
-                      children: [
-                        Image.asset("assets/icons/rubric_item.png"),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Answer',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildSectionHeader('Answer', 'rubric_item'),
                     const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.black),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(_selectedQuestion.answer),
-                    ),
+                    _buildInfoContainer(_selectedQuestion.answer),
                     const SizedBox(height: 24),
 
                     // Results Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Image.asset("assets/icons/rubric_item.png"),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Results',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
+                        _buildSectionHeader('Results', 'rubric_item'),
                         Row(
                           children: [
                             Text(
@@ -297,14 +263,17 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                border: Border.all(color: Colors.black),
+                                border: Border.all(
+                                    color: Colors.black.withOpacity(0.1)),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                '${totalScore.toInt()}/${maxScore.toInt()}',
+                                '$totalScore/$maxPossibleScore',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -330,39 +299,76 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(color: Colors.black, width: 1),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StudentPaperScreen(
-                          imageUrl: widget.result.paperImage),
+          if (widget.result.paperImage.isNotEmpty &&
+              widget.result.paperImage != 'notfound.jpg')
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Colors.black.withOpacity(0.1)),
                     ),
-                  );
-                },
-                child: const Text(
-                  'View Paper',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentPaperScreen(
+                            imageUrl: widget.result.paperImage),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'View Paper',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String iconName) {
+    return Row(
+      children: [
+        Image.asset("assets/icons/$iconName.png"),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 16,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoContainer(String content) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.black.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        content,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.black87,
+        ),
       ),
     );
   }

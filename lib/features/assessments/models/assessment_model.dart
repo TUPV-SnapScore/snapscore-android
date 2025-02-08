@@ -320,7 +320,6 @@ class IdentificationAssessment {
   final String userId;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<IdentificationResult> identificationResults;
 
   IdentificationAssessment({
     required this.id,
@@ -329,7 +328,6 @@ class IdentificationAssessment {
     required this.userId,
     required this.createdAt,
     required this.updatedAt,
-    required this.identificationResults,
   });
 
   factory IdentificationAssessment.fromJson(Map<String, dynamic> json) {
@@ -342,10 +340,6 @@ class IdentificationAssessment {
       userId: json['userId'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
-      identificationResults: (json['identificationResults'] as List?)
-              ?.map((r) => IdentificationResult.fromJson(r))
-              .toList() ??
-          [],
     );
   }
 
@@ -358,8 +352,6 @@ class IdentificationAssessment {
       'userId': userId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'identificationResults':
-          identificationResults.map((r) => r.toJson()).toList(),
     };
   }
 }

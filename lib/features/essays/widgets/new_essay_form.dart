@@ -172,6 +172,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
   // Update the build method for rubric levels
   Widget _buildRubricLevels(int criteriaIndex) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ...List.generate(
           rubricLevels[criteriaIndex].length,
@@ -179,8 +180,13 @@ class _NewEssayFormState extends State<NewEssayForm> {
             padding: const EdgeInsets.only(left: 32, bottom: 8),
             child: Row(
               children: [
-                SizedBox(
-                  width: 60,
+                Container(
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: TextField(
                     controller:
                         rubricLevels[criteriaIndex][levelIndex].scoreController,
@@ -188,7 +194,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.symmetric(horizontal: 8),
                       suffix: Text('pts'),
-                      border: OutlineInputBorder(),
+                      border: InputBorder.none,
                     ),
                   ),
                 ),
@@ -260,6 +266,12 @@ class _NewEssayFormState extends State<NewEssayForm> {
       setState(() {
         criteriaControllers.add(TextEditingController());
         criteriaScoreControllers.add(TextEditingController());
+        // Add default rubric levels for the new criteria
+        rubricLevels.add([
+          RubricLevel(initialScore: 20, description: "Excellent performance"),
+          RubricLevel(initialScore: 15, description: "Good performance"),
+          RubricLevel(initialScore: 10, description: "Needs improvement"),
+        ]);
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -272,6 +284,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
     }
   }
 
+// Also update the removeCriteria method to clean up rubric levels
   void removeCriteria(int index) {
     // Disable removing criteria in edit mode
     if (widget.initialData != null) return;
@@ -282,6 +295,12 @@ class _NewEssayFormState extends State<NewEssayForm> {
         criteriaControllers.removeAt(index);
         criteriaScoreControllers[index].dispose();
         criteriaScoreControllers.removeAt(index);
+
+        // Dispose and remove rubric levels for this criteria
+        for (var level in rubricLevels[index]) {
+          level.dispose();
+        }
+        rubricLevels.removeAt(index);
       });
     }
   }
@@ -360,7 +379,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
                         );
                       }).toList(),
                       onChanged: widget.initialData != null
-                          ? null // Disable dropdown if editing
+                          ? null
                           : (int? newValue) {
                               if (newValue != null) {
                                 setState(() {
@@ -416,6 +435,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
                           controller: criteriaControllers[criteriaIndex],
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Expanded(
                         flex: 1,
                         child: _buildTextField(
@@ -425,66 +445,43 @@ class _NewEssayFormState extends State<NewEssayForm> {
                           onChanged: (_) => updateTotalScore(),
                         ),
                       ),
+                      if (widget.initialData?.id?.isNotEmpty != true)
+                        IconButton(
+                          icon: Icon(
+                            Icons.remove_circle_outline,
+                            color: AppColors.error,
+                          ),
+                          onPressed: () => removeCriteria(criteriaIndex),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Rubric levels for each criteria
-                  ...List.generate(
-                    rubricLevels[criteriaIndex].length,
-                    (levelIndex) => Padding(
-                      padding: const EdgeInsets.only(left: 32, bottom: 8),
-                      child: Row(
-                        children: [
-                          Text(
-                            '${rubricLevels[criteriaIndex][levelIndex].score} pts - ',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Expanded(
-                            child: _buildTextField(
-                              hintText: 'Rubric description',
-                              controller: rubricLevels[criteriaIndex]
-                                      [levelIndex]
-                                  .controller,
-                            ),
-                          ),
-                          if (rubricLevels[criteriaIndex].length > 3)
-                            IconButton(
-                              icon: Icon(Icons.remove_circle_outline,
-                                  color: AppColors.error),
-                              onPressed: () =>
-                                  removeRubricLevel(criteriaIndex, levelIndex),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (rubricLevels[criteriaIndex].length < 5)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 32),
-                      child: TextButton(
-                        onPressed: () => addRubricLevel(criteriaIndex),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add, color: AppColors.textSecondary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Add Rubric Level',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  _buildRubricLevels(criteriaIndex),
                 ],
               ),
             ),
+            if (widget.initialData?.id == null ||
+                !widget.initialData!.id!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: TextButton(
+                  onPressed: addCriteria,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Add Criteria',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 20),
             _buildFormLabel('Total Score:'),
             _buildTextField(

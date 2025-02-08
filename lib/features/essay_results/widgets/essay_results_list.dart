@@ -94,7 +94,7 @@ class _StudentResultsListState extends State<StudentResultsList> {
                     trailing: SizedBox(
                       width: 50,
                       child: Text(
-                        result.totalScore.toStringAsFixed(0),
+                        result.score.toStringAsFixed(0),
                         style: TextStyle(
                           fontSize: 18,
                           color: AppColors.textSecondary,

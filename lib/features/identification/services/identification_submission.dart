@@ -34,23 +34,21 @@ class IdentificationService {
       required List<IdentificationAnswer> answers,
       required String userId}) async {
     try {
+      final body = {
+        'name': assessmentName,
+        'id': userId,
+        'questions':
+            answers.map((answer) => {'correctAnswer': answer.answer}).toList()
+      };
+
       final response = await http.post(
           Uri.parse('$baseUrl/identification-assessment/user'),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'name': assessmentName, 'id': userId}));
-
-      final data = jsonDecode(response.body);
+          body: jsonEncode(body));
 
       if (response.statusCode != 200 && response.statusCode != 201) {
+        final data = jsonDecode(response.body);
         throw Exception('Failed to create assessment: ${data['message']}');
-      }
-
-      print(data);
-
-      final assessmentId = data['id'];
-      for (var answer in answers) {
-        await _createIdentificationanswers(
-            answer: answer, assessmentId: assessmentId);
       }
 
       return jsonDecode(response.body);
