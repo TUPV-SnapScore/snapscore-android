@@ -29,6 +29,7 @@ class _NewEssayFormState extends State<NewEssayForm> {
   final List<TextEditingController> questionControllers = [];
   final List<TextEditingController> criteriaControllers = [];
   final List<TextEditingController> criteriaScoreControllers = [];
+  final List<List<RubricLevel>> rubricLevels = [];
   final TextEditingController titleController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -37,25 +38,28 @@ class _NewEssayFormState extends State<NewEssayForm> {
     super.initState();
     widget.controller.submitForm = _submitForm;
 
-    // Initialize with provided data if available
     if (widget.initialData != null) {
       titleController.text = widget.initialData!.essayTitle;
       selectedQuestions = widget.initialData!.questions.length;
 
-      // Initialize controllers with existing data
       for (var question in widget.initialData!.questions) {
-        questionControllers.add(
-          TextEditingController(text: question.questionText),
-        );
+        questionControllers.add(TextEditingController(text: question.question));
       }
 
       for (var criterion in widget.initialData!.criteria) {
-        criteriaControllers.add(
-          TextEditingController(text: criterion.criteriaText),
-        );
-        criteriaScoreControllers.add(
-          TextEditingController(text: criterion.maxScore.toString()),
-        );
+        criteriaControllers
+            .add(TextEditingController(text: criterion.criteria));
+        criteriaScoreControllers
+            .add(TextEditingController(text: criterion.maxScore.toString()));
+
+        // Initialize rubric levels from existing data
+        List<RubricLevel> levels = criterion.rubrics
+            .map((r) => RubricLevel(
+                score: int.parse(r.score),
+                description: r.description,
+                controller: TextEditingController(text: r.description)))
+            .toList();
+        rubricLevels.add(levels);
       }
     } else {
       // Default initialization
@@ -63,96 +67,118 @@ class _NewEssayFormState extends State<NewEssayForm> {
       questionControllers.add(TextEditingController());
       criteriaControllers.add(TextEditingController());
       criteriaScoreControllers.add(TextEditingController());
+
+      // Initialize with 3 default rubric levels
+      rubricLevels.add([
+        RubricLevel(
+            score: 20,
+            description: "Excellent",
+            controller: TextEditingController(text: "Excellent performance")),
+        RubricLevel(
+            score: 15,
+            description: "Good",
+            controller: TextEditingController(text: "Good performance")),
+        RubricLevel(
+            score: 10,
+            description: "Needs Improvement",
+            controller: TextEditingController(text: "Needs improvement")),
+      ]);
     }
   }
 
   Future<void> _submitForm() async {
-    // Validate form
     if (titleController.text.isEmpty) {
       throw Exception('Please enter an essay title');
     }
 
-    // Check if all questions are filled
     if (questionControllers.any((controller) => controller.text.isEmpty)) {
       throw Exception('Please fill in all essay questions');
     }
 
-    // Check if all criteria and scores are filled
     if (criteriaControllers.any((controller) => controller.text.isEmpty) ||
         criteriaScoreControllers.any((controller) => controller.text.isEmpty)) {
       throw Exception('Please fill in all criteria and scores');
     }
 
-    // Validate score inputs
-    for (var controller in criteriaScoreControllers) {
-      if (double.tryParse(controller.text) == null) {
-        throw Exception('Please enter valid numeric scores');
+    // Validate rubric levels
+    for (var levels in rubricLevels) {
+      if (levels.any((level) => level.controller.text.isEmpty)) {
+        throw Exception('Please fill in all rubric descriptions');
       }
     }
 
-    // Build and submit the JSON data
     final jsonData = buildJsonRequest();
     await widget.onSubmit(jsonData);
   }
 
-  @override
-  void dispose() {
-    titleController.dispose();
-    for (var controller in questionControllers) {
-      controller.dispose();
-    }
-    for (var controller in criteriaControllers) {
-      controller.dispose();
-    }
-    for (var controller in criteriaScoreControllers) {
-      controller.dispose();
-    }
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // JSON Request Builder Method
   Map<String, dynamic> buildJsonRequest() {
-    // Build questions list
     List<EssayQuestion> questions = [];
     for (int i = 0; i < questionControllers.length; i++) {
-      if (questionControllers[i].text.isNotEmpty) {
-        questions.add(EssayQuestion(
-          id: 'q${i + 1}',
-          questionNumber: i + 1,
-          questionText: questionControllers[i].text,
-        ));
-      }
+      questions.add(EssayQuestion(
+        questionNumber: i + 1,
+        question: questionControllers[i].text,
+        id: widget.initialData?.questions[i].id ?? 'temp_q${i + 1}',
+        essayCriteria: [],
+        assessmentId: widget.initialData?.id ?? '',
+      ));
     }
 
-    // Build criteria list
     List<EssayCriteria> criteria = [];
     for (int i = 0; i < criteriaControllers.length; i++) {
-      if (criteriaControllers[i].text.isNotEmpty) {
-        criteria.add(EssayCriteria(
-          id: 'c${i + 1}',
-          criteriaNumber: i + 1,
-          criteriaText: criteriaControllers[i].text,
-          maxScore: double.tryParse(criteriaScoreControllers[i].text) ?? 0.0,
+      List<Rubric> rubrics = [];
+      for (var level in rubricLevels[i]) {
+        rubrics.add(Rubric(
+          id: 'temp_r${rubrics.length + 1}',
+          score: level.score.toString(),
+          description: level.controller.text,
+          criteriaId: widget.initialData?.criteria[i].id ?? 'temp_c${i + 1}',
         ));
       }
+
+      criteria.add(EssayCriteria(
+        criteriaNumber: i + 1,
+        criteria: criteriaControllers[i].text,
+        maxScore: int.parse(criteriaScoreControllers[i].text),
+        id: widget.initialData?.criteria[i].id ?? 'temp_c${i + 1}',
+        rubrics: rubrics,
+        essayQuestionId: questions[0].id,
+      ));
     }
 
-    // Calculate total score
     double totalScore = criteriaScoreControllers
         .map((controller) => double.tryParse(controller.text) ?? 0.0)
         .fold(0.0, (sum, score) => sum + score);
 
-    // Create essay data object
-    EssayData essayData = EssayData(
+    return EssayData(
       essayTitle: titleController.text,
       questions: questions,
       criteria: criteria,
       totalScore: totalScore,
-    );
+      id: widget.initialData?.id,
+    ).toJson();
+  }
 
-    // Return JSON representation
-    return essayData.toJson();
+  void addRubricLevel(int criteriaIndex) {
+    if (rubricLevels[criteriaIndex].length < 5) {
+      setState(() {
+        rubricLevels[criteriaIndex].add(
+          RubricLevel(
+            score: 5,
+            description: "",
+            controller: TextEditingController(),
+          ),
+        );
+      });
+    }
+  }
+
+  void removeRubricLevel(int criteriaIndex, int levelIndex) {
+    if (rubricLevels[criteriaIndex].length > 3) {
+      setState(() {
+        final level = rubricLevels[criteriaIndex].removeAt(levelIndex);
+        level.controller.dispose();
+      });
+    }
   }
 
   void updateQuestionFields(int count) {
@@ -307,9 +333,10 @@ class _NewEssayFormState extends State<NewEssayForm> {
             _buildFormLabel('Rubrics:'),
             ...List.generate(
               criteriaControllers.length,
-              (index) => Column(
+              (criteriaIndex) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (index > 0) const SizedBox(height: 12),
+                  if (criteriaIndex > 0) const SizedBox(height: 20),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -318,68 +345,78 @@ class _NewEssayFormState extends State<NewEssayForm> {
                         child: _buildTextField(
                           hintText: 'Input essay criteria',
                           prefixIconAsset: "assets/icons/rubric_item.png",
-                          controller: criteriaControllers[index],
+                          controller: criteriaControllers[criteriaIndex],
                         ),
                       ),
                       Expanded(
                         flex: 1,
                         child: _buildTextField(
                           hintText: 'Score',
-                          controller: criteriaScoreControllers[index],
+                          controller: criteriaScoreControllers[criteriaIndex],
                           keyboardType: TextInputType.number,
                           onChanged: (_) => updateTotalScore(),
                         ),
                       ),
-                      // Only show remove button if not in edit mode
-                      if ((index > 0 || criteriaControllers.length > 1) &&
-                          widget.initialData == null)
-                        IconButton(
-                          icon: Icon(
-                            Icons.remove_circle_outline,
-                            color: AppColors.error,
-                          ),
-                          onPressed: () => removeCriteria(index),
-                        ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // Rubric levels for each criteria
+                  ...List.generate(
+                    rubricLevels[criteriaIndex].length,
+                    (levelIndex) => Padding(
+                      padding: const EdgeInsets.only(left: 32, bottom: 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${rubricLevels[criteriaIndex][levelIndex].score} pts - ',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildTextField(
+                              hintText: 'Rubric description',
+                              controller: rubricLevels[criteriaIndex]
+                                      [levelIndex]
+                                  .controller,
+                            ),
+                          ),
+                          if (rubricLevels[criteriaIndex].length > 3)
+                            IconButton(
+                              icon: Icon(Icons.remove_circle_outline,
+                                  color: AppColors.error),
+                              onPressed: () =>
+                                  removeRubricLevel(criteriaIndex, levelIndex),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (rubricLevels[criteriaIndex].length < 5)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 32),
+                      child: TextButton(
+                        onPressed: () => addRubricLevel(criteriaIndex),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add, color: AppColors.textSecondary),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Add Rubric Level',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            // Only show add criteria button if not in edit mode
-            if (criteriaControllers.length < 5 && widget.initialData == null)
-              TextButton(
-                onPressed: addCriteria,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Icon(Icons.add, color: AppColors.textSecondary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Insert additional essay criteria',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             const SizedBox(height: 20),
             _buildFormLabel('Total Score:'),
             _buildTextField(
@@ -458,4 +495,16 @@ class _NewEssayFormState extends State<NewEssayForm> {
       ),
     );
   }
+}
+
+class RubricLevel {
+  final int score;
+  final String description;
+  final TextEditingController controller;
+
+  RubricLevel({
+    required this.score,
+    required this.description,
+    required this.controller,
+  });
 }

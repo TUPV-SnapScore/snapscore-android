@@ -32,42 +32,12 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
 
   Future<void> _loadEssayData() async {
     try {
-      final essayData = await _essayService.getEssay(widget.essayId);
-      print('Essay data: $essayData');
+      final response = await _essayService.getEssay(widget.essayId);
+      print('Essay data: $response');
 
       if (mounted) {
-        // Extract questions with IDs
-        final questions = essayData['essayQuestions']
-            .asMap()
-            .entries
-            .map((entry) => EssayQuestion(
-                  questionNumber: entry.key + 1,
-                  questionText: entry.value['question'],
-                  id: entry.value['id'], // Store the original ID
-                ))
-            .toList();
-
-        // Get criteria with IDs
-        final criteria = essayData['essayQuestions'][0]['essayCriteria']
-            .asMap()
-            .entries
-            .map((entry) => EssayCriteria(
-                  criteriaNumber: entry.key + 1,
-                  criteriaText: entry.value['criteria'],
-                  maxScore: (entry.value['maxScore'] as num).toDouble(),
-                  id: entry.value['id'], // Store the original ID
-                ))
-            .toList();
-
         setState(() {
-          _initialData = EssayData(
-            essayTitle: essayData['name'],
-            questions: List<EssayQuestion>.from(questions),
-            criteria: List<EssayCriteria>.from(criteria),
-            totalScore: criteria
-                .map((c) => c.maxScore)
-                .fold(0.0, (sum, score) => sum + score),
-          );
+          _initialData = EssayData.fromJson(response);
           _isLoading = false;
         });
       }
@@ -86,9 +56,8 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
     try {
       final essayData = EssayData.fromJson(formData);
 
-      // Update essay title and total score if changed
-      if (_initialData!.essayTitle != essayData.essayTitle ||
-          _initialData!.totalScore != essayData.totalScore) {
+      // Update essay title
+      if (_initialData!.essayTitle != essayData.essayTitle) {
         await _essayService.updateEssay(
           essayId: widget.essayId,
           essayTitle: essayData.essayTitle,
@@ -100,30 +69,50 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         if (i < _initialData!.questions.length) {
           final questionId = _initialData!.questions[i].id;
           if (questionId != null &&
-              essayData.questions[i].questionText !=
-                  _initialData!.questions[i].questionText) {
+              essayData.questions[i].question !=
+                  _initialData!.questions[i].question) {
             await _essayService.updateQuestion(
               questionId: questionId,
-              questionText: essayData.questions[i].questionText,
+              questionText: essayData.questions[i].question,
             );
           }
         }
       }
 
-      // Update criteria
+      // Update criteria and their rubrics
       for (int i = 0; i < essayData.criteria.length; i++) {
         if (i < _initialData!.criteria.length) {
           final criteriaId = _initialData!.criteria[i].id;
           if (criteriaId != null &&
-              (essayData.criteria[i].criteriaText !=
-                      _initialData!.criteria[i].criteriaText ||
+              (essayData.criteria[i].criteria !=
+                      _initialData!.criteria[i].criteria ||
                   essayData.criteria[i].maxScore !=
                       _initialData!.criteria[i].maxScore)) {
             await _essayService.updateCriteria(
               criteriaId: criteriaId,
-              criteriaText: essayData.criteria[i].criteriaText,
-              maxScore: essayData.criteria[i].maxScore,
+              criteriaText: essayData.criteria[i].criteria,
+              maxScore: essayData.criteria[i].maxScore.toDouble(),
             );
+          }
+
+          // Update rubrics
+          for (int j = 0; j < essayData.criteria[i].rubrics.length; j++) {
+            if (j < _initialData!.criteria[i].rubrics.length) {
+              final rubricId = _initialData!.criteria[i].rubrics[j].id;
+              final newRubric = essayData.criteria[i].rubrics[j];
+
+              if (rubricId != null &&
+                  (newRubric.description !=
+                          _initialData!.criteria[i].rubrics[j].description ||
+                      newRubric.score !=
+                          _initialData!.criteria[i].rubrics[j].score)) {
+                await _essayService.updateRubric(
+                  rubricId: rubricId,
+                  description: newRubric.description,
+                  score: newRubric.score,
+                );
+              }
+            }
           }
         }
       }

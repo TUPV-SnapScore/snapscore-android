@@ -5,40 +5,56 @@ class EssayResult {
   final String studentName;
   final String assessmentId;
   final List<EssayQuestionResult> questionResults;
-  final double totalScore;
+  final String paperImage;
+  final DateTime createdAt;
+  final int totalScore;
 
   EssayResult({
     required this.id,
     required this.studentName,
     required this.assessmentId,
     required this.questionResults,
-    required this.totalScore,
-  });
+    this.paperImage = 'notfound.jpg',
+    DateTime? createdAt,
+    int? totalScore,
+  })  : this.createdAt = createdAt ?? DateTime.now(),
+        this.totalScore = totalScore ?? calculateTotalScore(questionResults);
 
   factory EssayResult.fromJson(Map<String, dynamic> json) {
     return EssayResult(
-      id: json['id']?.toString() ?? '', // Convert to string and provide default
+      id: json['id']?.toString() ?? '',
       studentName: json['studentName']?.toString() ?? 'Unknown Student',
       assessmentId: json['assessmentId']?.toString() ?? '',
       questionResults: (json['questionResults'] as List?)
               ?.map((e) => EssayQuestionResult.fromJson(e))
               .toList() ??
           [],
-      totalScore: calculateTotalScore(json['questionResults'] ?? []),
+      paperImage: json['paperImage']?.toString() ?? 'notfound.jpg',
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      totalScore: (json['score'] as num?)?.toInt(),
     );
   }
 
-  static double calculateTotalScore(List<dynamic> questionResults) {
-    double total = 0;
-    for (var questionResult in questionResults) {
-      final criteriaResults = questionResult['essayCriteriaResults'] as List?;
-      if (criteriaResults != null) {
-        for (var criteriaResult in criteriaResults) {
-          total += (criteriaResult['score'] as num?)?.toDouble() ?? 0.0;
-        }
-      }
-    }
-    return total;
+  static int calculateTotalScore(List<EssayQuestionResult> questionResults) {
+    return questionResults.fold(
+        0,
+        (total, question) =>
+            total +
+            question.essayCriteriaResults
+                .fold(0, (sum, criteria) => sum + criteria.score));
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'studentName': studentName,
+      'assessmentId': assessmentId,
+      'questionResults': questionResults.map((qr) => qr.toJson()).toList(),
+      'score': totalScore,
+      'paperImage': paperImage,
+      'createdAt': createdAt.toIso8601String(),
+    };
   }
 }
 
@@ -47,17 +63,21 @@ class EssayQuestionResult {
   final String answer;
   final String questionId;
   final String resultId;
+  final int score;
   final EssayQuestion question;
   final List<EssayCriteriaResult> essayCriteriaResults;
+  final DateTime createdAt;
 
   EssayQuestionResult({
     required this.id,
     required this.answer,
     required this.questionId,
     required this.resultId,
+    required this.score,
     required this.question,
     required this.essayCriteriaResults,
-  });
+    DateTime? createdAt,
+  }) : this.createdAt = createdAt ?? DateTime.now();
 
   factory EssayQuestionResult.fromJson(Map<String, dynamic> json) {
     return EssayQuestionResult(
@@ -65,21 +85,39 @@ class EssayQuestionResult {
       answer: json['answer']?.toString() ?? '',
       questionId: json['questionId']?.toString() ?? '',
       resultId: json['resultId']?.toString() ?? '',
+      score: (json['score'] as num?)?.toInt() ?? 0,
       question: EssayQuestion.fromJson(json['question'] ?? {}),
       essayCriteriaResults: (json['essayCriteriaResults'] as List?)
               ?.map((e) => EssayCriteriaResult.fromJson(e))
               .toList() ??
           [],
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'answer': answer,
+      'questionId': questionId,
+      'resultId': resultId,
+      'score': score,
+      'question': question.toJson(),
+      'essayCriteriaResults':
+          essayCriteriaResults.map((cr) => cr.toJson()).toList(),
+      'createdAt': createdAt.toIso8601String(),
+    };
   }
 }
 
 class EssayCriteriaResult {
   final String id;
-  final double score;
+  final int score;
   final String criteriaId;
   final String questionResultId;
   final EssayCriteria criteria;
+  final DateTime createdAt;
 
   EssayCriteriaResult({
     required this.id,
@@ -87,15 +125,29 @@ class EssayCriteriaResult {
     required this.criteriaId,
     required this.questionResultId,
     required this.criteria,
-  });
+    DateTime? createdAt,
+  }) : this.createdAt = createdAt ?? DateTime.now();
 
   factory EssayCriteriaResult.fromJson(Map<String, dynamic> json) {
     return EssayCriteriaResult(
       id: json['id']?.toString() ?? '',
-      score: (json['score'] as num?)?.toDouble() ?? 0.0,
+      score: (json['score'] as num?)?.toInt() ?? 0,
       criteriaId: json['criteriaId']?.toString() ?? '',
       questionResultId: json['questionResultId']?.toString() ?? '',
       criteria: EssayCriteria.fromJson(json['criteria'] ?? {}),
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'score': score,
+      'criteriaId': criteriaId,
+      'questionResultId': questionResultId,
+      'criteria': criteria.toJson(),
+      'createdAt': createdAt.toIso8601String(),
+    };
   }
 }

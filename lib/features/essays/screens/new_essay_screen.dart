@@ -49,11 +49,24 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
       final essayData = EssayData.fromJson(data);
       print(essayData.toJson());
 
+      // Transform the data to match the new service structure
+      final questions = essayData.questions
+          .map((question) => EssayQuestion(
+                question: question.question,
+                essayCriteria: essayData.criteria
+                    .map((criteria) => EssayCriteria(
+                          criteria: criteria.criteria,
+                          maxScore: criteria.maxScore,
+                          rubrics: criteria.rubrics,
+                        ))
+                    .toList(),
+              ))
+          .toList();
+
       final result = await _essayService.createEssay(
         essayTitle: essayData.essayTitle,
-        questions: essayData.questions,
-        criteria: essayData.criteria,
         userId: userId,
+        questions: questions,
       );
 
       if (result['error'] == true) {
@@ -123,9 +136,10 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
             child: Text(
               'Essay',
               style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700),
+                color: AppColors.textSecondary,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           Expanded(

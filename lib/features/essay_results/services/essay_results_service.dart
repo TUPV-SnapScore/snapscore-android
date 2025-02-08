@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:snapscore_android/features/essay_results/models/essay_results_model.dart';
+import '../models/essay_results_model.dart';
 
 class EssayResultsService {
   final String baseUrl;
@@ -21,11 +21,46 @@ class EssayResultsService {
       }
 
       final List<dynamic> data = jsonDecode(response.body);
-      print(data);
       return data.map((e) => EssayResult.fromJson(e)).toList();
     } catch (e) {
-      print(e);
       throw Exception('Error fetching essay results: $e');
+    }
+  }
+
+  Future<void> updateCriteriaScore(String criteriaId, int newScore) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/essay-results/criteria/$criteriaId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'score': newScore}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update criteria score');
+      }
+    } catch (e) {
+      throw Exception('Error updating criteria score: $e');
+    }
+  }
+
+  Future<String> uploadPaper(String resultId, String filePath) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/essay-results/$resultId/upload-paper'),
+      );
+
+      request.files.add(await http.MultipartFile.fromPath('paper', filePath));
+
+      final response = await request.send();
+      if (response.statusCode != 200) {
+        throw Exception('Failed to upload paper');
+      }
+
+      final responseData = await response.stream.bytesToString();
+      return json.decode(responseData)['paperUrl'];
+    } catch (e) {
+      throw Exception('Error uploading paper: $e');
     }
   }
 }

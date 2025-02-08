@@ -8,9 +8,9 @@ class EssayResultsScreen extends StatefulWidget {
   final String assessmentId;
 
   const EssayResultsScreen({
-    Key? key,
+    super.key,
     required this.assessmentId,
-  }) : super(key: key);
+  });
 
   @override
   State<EssayResultsScreen> createState() => _EssayResultsScreenState();

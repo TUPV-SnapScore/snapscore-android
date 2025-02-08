@@ -21,6 +21,7 @@ class EssayStudentResultScreen extends StatefulWidget {
 class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
   late EssayQuestionResult _selectedQuestion;
   final String baseUrl = dotenv.get('API_URL');
+  bool _isUpdating = false;
 
   @override
   void initState() {
@@ -29,6 +30,9 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
   }
 
   Future<void> _updateCriteriaScore(String criteriaId, double newScore) async {
+    if (_isUpdating) return;
+    setState(() => _isUpdating = true);
+
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/essay-results/criteria/$criteriaId'),
@@ -48,7 +52,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
           _selectedQuestion.essayCriteriaResults[criteriaIndex] =
               EssayCriteriaResult(
             id: criteriaId,
-            score: newScore,
+            score: newScore.toInt(),
             criteriaId: _selectedQuestion
                 .essayCriteriaResults[criteriaIndex].criteriaId,
             questionResultId: _selectedQuestion
@@ -62,6 +66,8 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating score: $e')),
       );
+    } finally {
+      setState(() => _isUpdating = false);
     }
   }
 
@@ -71,7 +77,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
         Expanded(
           flex: 3,
           child: Text(
-            '${criteria.criteria.criteriaText} (${criteria.criteria.maxScore.toInt()})',
+            '${criteria.criteria.criteria} (${criteria.criteria.maxScore.toInt()})',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 16,
@@ -100,6 +106,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
             controller: TextEditingController(
               text: criteria.score.toStringAsFixed(0),
             ),
+            enabled: !_isUpdating,
             onSubmitted: (value) {
               final newScore = double.tryParse(value);
               if (newScore != null) {
@@ -200,7 +207,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                   items: widget.result.questionResults.map((question) {
                     return DropdownMenuItem(
                       value: question,
-                      child: Text(question.question.questionText),
+                      child: Text(question.question.question),
                     );
                   }).toList(),
                   onChanged: (value) {

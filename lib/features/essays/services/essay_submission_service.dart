@@ -8,96 +8,69 @@ class EssayService {
 
   EssayService() : baseUrl = dotenv.get('API_URL');
 
-  Future<Map<String, dynamic>> _createEssayQuestion({
-    required EssayQuestion question,
-    required String essayId,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/essay-questions'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'question': question.questionText,
-          'assessmentId': essayId,
-        }),
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {
-        'error': true,
-        'message': 'Failed creating essay question: $e',
-      };
-    }
-  }
-
-  Future<Map<String, dynamic>> _createEssayCriteria({
-    required EssayCriteria criteria,
-    required String essayId,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/essay-criteria'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'criteria': criteria.criteriaText,
-          'maxScore': criteria.maxScore,
-          'essayQuestionId': essayId,
-        }),
-      );
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {
-        'error': true,
-        'message': 'Failed creating essay criteria: $e',
-      };
-    }
-  }
-
   Future<Map<String, dynamic>> createEssay({
     required String essayTitle,
-    required List<EssayQuestion> questions,
-    required List<EssayCriteria> criteria,
     required String userId,
+    required List<EssayQuestion> questions,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/essay-assessment'),
+        Uri.parse('$baseUrl/essay-assessment/user'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': essayTitle,
-          'userId': userId,
+          'id': userId,
+          'questions': questions
+              .map((question) => {
+                    'question': question.question,
+                    'essayCriteria': question.essayCriteria
+                        .map((criteria) => {
+                              'criteria': criteria.criteria,
+                              'maxScore': criteria.maxScore,
+                              'rubrics': criteria.rubrics
+                                  .map((rubric) => {
+                                        'score': rubric.score,
+                                        'description': rubric.description,
+                                      })
+                                  .toList(),
+                            })
+                        .toList(),
+                  })
+              .toList(),
         }),
       );
 
-      final data = jsonDecode(response.body);
-
       if (response.statusCode != 200 && response.statusCode != 201) {
+        final data = jsonDecode(response.body);
         throw Exception('Failed to create essay: ${data['message']}');
       }
 
-      final essayId = data['id'];
-
-      // Create questions
-      String? firstQuestionId;
-      for (var question in questions) {
-        final questionResponse =
-            await _createEssayQuestion(question: question, essayId: essayId);
-        firstQuestionId ??= questionResponse['id'];
-      }
-
-      // Create criteria
-      for (var criterion in criteria) {
-        await _createEssayCriteria(
-            criteria: criterion, essayId: firstQuestionId!);
-      }
-
-      return data;
+      return jsonDecode(response.body);
     } catch (e) {
       return {
         'error': true,
         'message': 'Failed to create essay: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> updateEssay({
+    required String essayId,
+    required String essayTitle,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/essay-assessment/$essayId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': essayTitle,
+        }),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {
+        'error': true,
+        'message': 'Failed to update essay: $e',
       };
     }
   }
@@ -117,29 +90,6 @@ class EssayService {
     }
   }
 
-  Future<Map<String, dynamic>> updateEssay({
-    required String essayId,
-    required String essayTitle,
-  }) async {
-    try {
-      final Map<String, dynamic> body = {
-        'name': essayTitle,
-      };
-
-      final response = await http.put(
-        Uri.parse('$baseUrl/essay-assessment/$essayId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {
-        'error': true,
-        'message': 'Failed to update essay: $e',
-      };
-    }
-  }
-
   Future<Map<String, dynamic>> updateQuestion({
     required String questionId,
     required String questionText,
@@ -149,7 +99,7 @@ class EssayService {
         Uri.parse('$baseUrl/essay-questions/$questionId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'question': questionText, // Changed from questionText to question
+          'question': questionText,
         }),
       );
       return jsonDecode(response.body);
@@ -171,7 +121,7 @@ class EssayService {
         Uri.parse('$baseUrl/essay-criteria/$criteriaId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'criteria': criteriaText, // Changed from criteriaText to criteria
+          'criteria': criteriaText,
           'maxScore': maxScore,
         }),
       );
@@ -180,6 +130,29 @@ class EssayService {
       return {
         'error': true,
         'message': 'Failed to update criteria: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> updateRubric({
+    required String rubricId,
+    required String description,
+    required String score,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/essay-rubrics/$rubricId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'description': description,
+          'score': score,
+        }),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {
+        'error': true,
+        'message': 'Failed to update rubric: $e',
       };
     }
   }
