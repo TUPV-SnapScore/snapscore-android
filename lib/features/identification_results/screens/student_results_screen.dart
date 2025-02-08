@@ -251,19 +251,29 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Colors.black, width: 1),
                   ),
                 ),
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return StudentPaperScreen(
-                      imageUrl: widget.result.paperImage,
-                    );
-                  }));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentPaperScreen(
+                          imageUrl: widget.result.paperImage),
+                    ),
+                  );
                 },
-                child: Text('View Paper'),
+                child: const Text(
+                  'View Paper',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
