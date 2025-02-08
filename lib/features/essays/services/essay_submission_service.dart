@@ -142,7 +142,7 @@ class EssayService {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/essay-rubrics/$rubricId'),
+        Uri.parse('$baseUrl/rubrics/$rubricId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'description': description,
