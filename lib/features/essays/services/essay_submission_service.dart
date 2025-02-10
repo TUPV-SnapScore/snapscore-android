@@ -157,4 +157,21 @@ class EssayService {
       };
     }
   }
+
+  Future<bool> deleteEssay(String essayId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/essay-assessment/$essayId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete essay');
+      }
+
+      return true;
+    } catch (e) {
+      throw Exception('Error deleting essay: $e');
+    }
+  }
 }

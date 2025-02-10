@@ -40,6 +40,10 @@ class AuthProvider extends ChangeNotifier {
     return await _authService.signInWithEmailPassword(email, password);
   }
 
+  Future<void> sendEmailResetPassword(String email) async {
+    await _authService.sendEmailResetPassword(email);
+  }
+
   Future<UserCredential?> signInWithGoogle() async {
     return await _authService.signInWithGoogle();
   }

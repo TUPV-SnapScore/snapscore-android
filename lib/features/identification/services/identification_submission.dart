@@ -8,24 +8,20 @@ class IdentificationService {
 
   IdentificationService() : baseUrl = dotenv.get('API_URL');
 
-  Future<Map<String, dynamic>> _createIdentificationanswers(
-      {required IdentificationAnswer answer,
-      required String assessmentId}) async {
+  Future<bool> deleteAssessment(String assessmentId) async {
     try {
-      final response = await http.post(
-          Uri.parse('$baseUrl/identification-questions'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(
-              {'correctAnswer': answer.answer, 'assessmentId': assessmentId}));
+      final response = await http.delete(
+        Uri.parse('$baseUrl/identification-assessment/$assessmentId'),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-      print(response.body);
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete assessment');
+      }
 
-      return jsonDecode(response.body);
+      return true;
     } catch (e) {
-      return {
-        'error': true,
-        'message': 'Failed creating identification answers'
-      };
+      throw Exception('Error deleting assessment: $e');
     }
   }
 

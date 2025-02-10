@@ -55,13 +55,16 @@ class _IdentificationResultsScreenState
 
   void _handleStudentSelected(String resultId) async {
     final result = _results.firstWhere((r) => r.id == resultId);
-    await Navigator.push(
+    final pageResult = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => StudentResultScreen(result: result),
       ),
-    ).then((_) =>
-        _loadResults()); // Reload results when returning from StudentResultScreen
+    );
+
+    if (pageResult == true) {
+      _loadResults();
+    }
   }
 
   @override

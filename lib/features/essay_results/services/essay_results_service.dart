@@ -43,6 +43,23 @@ class EssayResultsService {
     }
   }
 
+  Future<bool> deleteEssayResult(String resultId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/essay-results/$resultId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete essay result');
+      }
+
+      return true;
+    } catch (e) {
+      throw Exception('Error deleting essay result: $e');
+    }
+  }
+
   Future<String> uploadPaper(String resultId, String filePath) async {
     try {
       final request = http.MultipartRequest(

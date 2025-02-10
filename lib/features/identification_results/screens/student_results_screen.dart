@@ -51,13 +51,31 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
     }
   }
 
-  void _showAnswerOptions(int index) {
+  Future<void> _deleteResult() async {
+    try {
+      final result = await _service.deleteStudentResult(widget.result.id);
+      if (result) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting result: $e')),
+      );
+    }
+  }
+
+  void _showAnswerOptions(int index, Offset tapPosition) {
     final currentResult = questionResults[index];
     print(currentResult.answer);
 
     showMenu(
       context: context,
-      position: RelativeRect.fromLTRB(100, 100, 0, 0),
+      position: RelativeRect.fromLTRB(
+        tapPosition.dx, // x position
+        tapPosition.dy - 40, // y position with offset up
+        tapPosition.dx + 1,
+        tapPosition.dy + 1,
+      ),
       items: [
         PopupMenuItem(
           child: ListTile(
@@ -94,7 +112,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: Text(
           'SnapScore',
@@ -106,9 +124,23 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check, color: AppColors.textPrimary),
-            onPressed: () => Navigator.pop(context),
+          PopupMenuButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                onTap: _deleteResult,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Delete Results',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -236,9 +268,11 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                         color: result.isCorrect ? Colors.green : Colors.red,
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.more_horiz),
-                      onPressed: () => _showAnswerOptions(index),
+                    trailing: GestureDetector(
+                      child: Icon(Icons.more_horiz),
+                      onTapDown: (TapDownDetails details) {
+                        _showAnswerOptions(index, details.globalPosition);
+                      },
                     ),
                   ),
                 );

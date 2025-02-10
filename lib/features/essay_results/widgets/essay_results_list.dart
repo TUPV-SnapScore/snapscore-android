@@ -102,14 +102,18 @@ class _StudentResultsListState extends State<StudentResultsList> {
                         textAlign: TextAlign.right,
                       ),
                     ),
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final pageResult = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                               EssayStudentResultScreen(result: result),
                         ),
                       );
+
+                      if (pageResult == true) {
+                        await _handleRefresh();
+                      }
                     },
                   ),
                 );

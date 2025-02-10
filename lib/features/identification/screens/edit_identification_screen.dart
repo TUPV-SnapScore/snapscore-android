@@ -86,6 +86,25 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
     }
   }
 
+  Future<void> _deleteAssessment() async {
+    try {
+      await _identificationService.deleteAssessment(widget.assessmentId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Assessment deleted successfully')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      print('Error deleting assessment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete assessment')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSubmit(Map<String, dynamic> formData) async {
     try {
       // Update assessment name if changed
@@ -136,7 +155,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
           'Edit Assessment',
@@ -146,6 +165,26 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                onTap: _deleteAssessment,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Delete Results',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         centerTitle: true,
       ),
       body: _isLoading

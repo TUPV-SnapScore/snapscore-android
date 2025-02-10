@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/essay_results/services/essay_results_service.dart';
 import 'package:snapscore_android/features/identification_results/screens/student_paper_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../models/essay_results_model.dart';
@@ -23,6 +24,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
   late EssayQuestionResult _selectedQuestion;
   final String baseUrl = dotenv.get('API_URL');
   bool _isUpdating = false;
+  final _essayService = EssayResultsService();
 
   @override
   void initState() {
@@ -67,6 +69,19 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
       );
     } finally {
       setState(() => _isUpdating = false);
+    }
+  }
+
+  Future<void> _deleteResult() async {
+    try {
+      final result = await _essayService.deleteEssayResult(widget.result.id);
+      if (result) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting result: $e')),
+      );
     }
   }
 
@@ -139,31 +154,6 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
     );
   }
 
-  // Helper function to get criteria name based on ID
-  String getCriteriaName(String criteriaId, int maxScore) {
-    // This should be replaced with actual criteria names from your system
-    // For now using placeholder names based on the example response
-    Map<String, String> criteriaNames = {
-      '67a73ba06df187d8f89efc02': 'Content & Understanding',
-      '67a73ba16df187d8f89efc06': 'Organization & Coherence',
-      '67a73ba16df187d8f89efc0a': 'Grammar & Mechanics',
-      '67a73ba26df187d8f89efc0e': 'Relevance & Analysis',
-    };
-
-    return '${criteriaNames[criteriaId] ?? 'Criteria'} ($maxScore)';
-  }
-
-  // Helper function to get question text based on ID
-  String getQuestionText(String questionId) {
-    // This should be replaced with actual question texts from your system
-    Map<String, String> questionTexts = {
-      '67a73ba06df187d8f89efc02':
-          'How has the life and works of Jose Rizal impacted you?',
-    };
-
-    return questionTexts[questionId] ?? 'Question';
-  }
-
   @override
   Widget build(BuildContext context) {
     // Calculate total score from the actual score property
@@ -181,7 +171,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
           'Results',
@@ -191,6 +181,26 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                onTap: _deleteResult,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Delete Results',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         centerTitle: true,
       ),
       body: Column(
@@ -228,7 +238,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                           return DropdownMenuItem(
                             value: question,
                             child: Text(
-                              question.question?.question ?? 'Unknown Question',
+                              question.question.question,
                             ),
                           );
                         }).toList(),

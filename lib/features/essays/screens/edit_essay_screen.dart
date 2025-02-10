@@ -122,13 +122,31 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Essay updated successfully')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e, stackTrace) {
       debugPrint('Error updating essay: $e\n$stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update essay: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAssessment() async {
+    try {
+      await _essayService.deleteEssay(widget.essayId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Essay deleted successfully')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete essay: ${e.toString()}')),
         );
       }
     }
@@ -142,7 +160,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
           'SnapScore',
@@ -152,6 +170,26 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                onTap: _deleteAssessment,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Delete Assessment',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         centerTitle: true,
       ),
       body: _isLoading
