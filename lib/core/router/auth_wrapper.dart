@@ -35,9 +35,12 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        return authProvider.isAuthenticated
-            ? authenticatedRoute
-            : unauthenticatedRoute;
+        // Only show authenticated route if we have both Firebase and MongoDB user
+        if (authProvider.user != null && authProvider.userId != null) {
+          return authenticatedRoute;
+        }
+
+        return unauthenticatedRoute;
       },
     );
   }

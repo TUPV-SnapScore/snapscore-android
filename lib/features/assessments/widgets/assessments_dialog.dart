@@ -39,7 +39,7 @@ void showAssessmentTypeDialog(BuildContext context) {
                         title: 'Identification',
                         iconPath: 'assets/images/assessment_test.png',
                         onTap: () => {
-                          Navigator.pop(context),
+                          Navigator.pop(context, true),
                           Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -55,7 +55,7 @@ void showAssessmentTypeDialog(BuildContext context) {
                         title: 'Essay',
                         iconPath: 'assets/images/assessment_essay.png',
                         onTap: () => {
-                          Navigator.pop(context),
+                          Navigator.pop(context, true),
                           Navigator.push(
                               context,
                               MaterialPageRoute(

@@ -10,10 +10,10 @@ class IdentificationResultsScreen extends StatefulWidget {
   final String assessmentName;
 
   const IdentificationResultsScreen({
-    Key? key,
+    super.key,
     required this.assessmentId,
     required this.assessmentName,
-  }) : super(key: key);
+  });
 
   @override
   State<IdentificationResultsScreen> createState() =>
@@ -33,7 +33,15 @@ class _IdentificationResultsScreenState
   }
 
   Future<void> _loadResults() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
+      print("load called");
+
       final results =
           await _service.getResultsByAssessmentId(widget.assessmentId);
       if (mounted) {
@@ -50,20 +58,6 @@ class _IdentificationResultsScreenState
           SnackBar(content: Text('Error loading results: $e')),
         );
       }
-    }
-  }
-
-  void _handleStudentSelected(String resultId) async {
-    final result = _results.firstWhere((r) => r.id == resultId);
-    final pageResult = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StudentResultScreen(result: result),
-      ),
-    );
-
-    if (pageResult == true) {
-      _loadResults();
     }
   }
 
@@ -105,7 +99,21 @@ class _IdentificationResultsScreenState
                 ? const Center(child: CircularProgressIndicator())
                 : StudentResultsList(
                     results: _results,
-                    onStudentSelected: _handleStudentSelected,
+                    onStudentSelected: (String resultId) async {
+                      final result =
+                          _results.firstWhere((r) => r.id == resultId);
+                      final pageResult = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              StudentResultScreen(result: result),
+                        ),
+                      );
+
+                      if (pageResult == true) {
+                        _loadResults();
+                      }
+                    },
                     onRefresh: _loadResults, // Add this line
                   ),
           ),

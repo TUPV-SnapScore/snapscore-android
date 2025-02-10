@@ -32,6 +32,13 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
 
   Future<void> _loadResults() async {
     try {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      print("load called");
       final results = await _resultsService.getResultsByAssessmentId(
         widget.assessmentId,
       );

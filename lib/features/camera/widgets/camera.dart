@@ -28,6 +28,29 @@ class CameraState extends State<Camera> {
   FlashMode _currentFlashMode = FlashMode.off;
   final cameraService = CameraService();
 
+  bool _isPortrait = false;
+
+  // Add this method to toggle orientation
+  Future<void> _toggleOrientation() async {
+    if (_controller == null) return;
+
+    try {
+      final newOrientation = _isPortrait
+          ? DeviceOrientation.landscapeRight
+          : DeviceOrientation.portraitUp;
+
+      await _controller!.lockCaptureOrientation(newOrientation);
+
+      setState(() {
+        _isPortrait = !_isPortrait;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+        SnackBar(content: Text('Error changing orientation: $e')),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,7 +75,9 @@ class CameraState extends State<Camera> {
       await _controller!.setFlashMode(FlashMode.off);
       await _controller!
           .lockCaptureOrientation(DeviceOrientation.landscapeRight);
-      if (mounted) setState(() {});
+      setState(() {
+        _isPortrait = false;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context as BuildContext).showSnackBar(
@@ -135,8 +160,11 @@ class CameraState extends State<Camera> {
     try {
       setState(() => _isProcessing = true);
 
-      // Set the orientation before capturing
-      await _controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
+      // Use the current orientation setting
+      final captureOrientation = _isPortrait
+          ? DeviceOrientation.portraitUp
+          : DeviceOrientation.landscapeRight;
+      await _controller!.lockCaptureOrientation(captureOrientation);
 
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String dirPath = '${appDir.path}/Pictures';
@@ -153,10 +181,9 @@ class CameraState extends State<Camera> {
         _isReviewing = true;
       });
 
-      // Reset orientation after capturing
+      // Reset to the current orientation setting
       await _controller!.unlockCaptureOrientation();
-      await _controller!
-          .lockCaptureOrientation(DeviceOrientation.landscapeRight);
+      await _controller!.lockCaptureOrientation(captureOrientation);
     } catch (e) {
       setState(() => _isProcessing = false);
       if (mounted) {
@@ -287,11 +314,21 @@ class CameraState extends State<Camera> {
           ),
         ),
         actions: [
-          if (!_isReviewing)
+          if (!_isReviewing) ...[
             IconButton(
               icon: Icon(_getFlashIcon(), color: Colors.black),
               onPressed: _toggleFlash,
             ),
+            IconButton(
+              icon: Icon(
+                _isPortrait
+                    ? Icons.screen_rotation
+                    : Icons.stay_current_portrait,
+                color: Colors.black,
+              ),
+              onPressed: _toggleOrientation,
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.more_horiz, color: Colors.black),
             onPressed: () {},

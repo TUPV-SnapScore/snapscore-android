@@ -95,14 +95,17 @@ class _RegisterFormState extends State<RegisterForm> {
     setState(() => _isLoading = true);
 
     try {
-      // First, handle Google authentication
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final googleUserCredential = await authProvider.signInWithGoogle();
 
-      // Get the user information from Google
-      final googleUser = googleUserCredential?.user;
+      // Check if sign in was cancelled
+      if (googleUserCredential == null) {
+        setState(() => _isLoading = false);
+        return; // Exit early if sign-in was cancelled
+      }
+
+      final googleUser = googleUserCredential.user;
       if (googleUser != null && googleUser.email != null) {
-        // Create user in your backend
         final apiService = ApiService();
         final userData = await apiService.googleSignIn(
           email: googleUser.email!,
@@ -110,12 +113,12 @@ class _RegisterFormState extends State<RegisterForm> {
           fullName: googleUser.displayName ?? 'Google User',
         );
 
-        // Store the MongoDB user ID in the AuthProvider
-        authProvider.setUserId(
-            userData['id']); // Assuming '_id' is the MongoDB ID field
-      }
+        authProvider.setUserId(userData['id']);
 
-      AuthWrapper.forceAuthenticatedRoute(context);
+        if (mounted) {
+          AuthWrapper.forceAuthenticatedRoute(context);
+        }
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       print(e);
