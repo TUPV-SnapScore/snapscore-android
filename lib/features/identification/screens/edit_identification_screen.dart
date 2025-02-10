@@ -135,7 +135,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Assessment updated successfully')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       print('Error updating assessment: $e');

@@ -4,8 +4,15 @@ import '../widgets/assessments_list.dart';
 import '../widgets/settings_popup.dart';
 import '../widgets/assessments_dialog.dart';
 
-class AssessmentScreen extends StatelessWidget {
+class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
+
+  @override
+  State<AssessmentScreen> createState() => _AssessmentScreenState();
+}
+
+class _AssessmentScreenState extends State<AssessmentScreen> {
+  final GlobalKey<AssessmentSearchWidgetState> _searchWidgetKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +29,9 @@ class AssessmentScreen extends StatelessWidget {
               final Offset offset = button.localToGlobal(Offset.zero);
 
               final RelativeRect position = RelativeRect.fromLTRB(
-                MediaQuery.of(context).size.width - 200, // Position from right
-                offset.dy +
-                    AppBar().preferredSize.height +
-                    25, // Position below AppBar + 20 pixels
-                8, // Right padding
+                MediaQuery.of(context).size.width - 200,
+                offset.dy + AppBar().preferredSize.height + 25,
+                8,
                 0,
               );
 
@@ -38,7 +43,6 @@ class AssessmentScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // App Bar
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Center(
@@ -63,25 +67,24 @@ class AssessmentScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Search Bar
-            const AssessmentSearchWidget(),
-
-            // New Assessment Button
+            AssessmentSearchWidget(key: _searchWidgetKey),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => showAssessmentTypeDialog(context),
+                  onPressed: () async {
+                    final result = await showAssessmentTypeDialog(context);
+                    if (result) {
+                      _searchWidgetKey.currentState?.refreshAssessments();
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 4), // reduced from 12 to 8
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
-                      side: const BorderSide(
-                          color: Colors.black, width: 1), // black border
+                      side: const BorderSide(color: Colors.black, width: 1),
                     ),
                   ),
                   child: Row(

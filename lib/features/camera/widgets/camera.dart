@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as img;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
@@ -28,35 +29,20 @@ class CameraState extends State<Camera> {
   FlashMode _currentFlashMode = FlashMode.off;
   final cameraService = CameraService();
 
-  bool _isPortrait = false;
-
-  // Add this method to toggle orientation
-  Future<void> _toggleOrientation() async {
-    if (_controller == null) return;
-
-    try {
-      final newOrientation = _isPortrait
-          ? DeviceOrientation.landscapeRight
-          : DeviceOrientation.portraitUp;
-
-      await _controller!.lockCaptureOrientation(newOrientation);
-
-      setState(() {
-        _isPortrait = !_isPortrait;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-        SnackBar(content: Text('Error changing orientation: $e')),
-      );
-    }
-  }
+  DeviceOrientation _currentOrientation = DeviceOrientation.portraitUp;
+  DeviceOrientation? _photoOrientation;
+  Size? _previewSize;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
+    // Allow all orientations from the start
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
     ]);
   }
 
@@ -65,19 +51,18 @@ class CameraState extends State<Camera> {
     if (cameras.isEmpty) return;
 
     _controller = CameraController(
-      cameras[0],
-      ResolutionPreset.high,
-      enableAudio: false,
-    );
+        cameras[0], ResolutionPreset.max, // Set to maximum resolution
+        enableAudio: false,
+        imageFormatGroup:
+            ImageFormatGroup.bgra8888 // Use highest quality format
+        );
 
     try {
       await _controller!.initialize();
       await _controller!.setFlashMode(FlashMode.off);
-      await _controller!
-          .lockCaptureOrientation(DeviceOrientation.landscapeRight);
-      setState(() {
-        _isPortrait = false;
-      });
+
+      _previewSize = _controller!.value.previewSize;
+      setState(() {});
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context as BuildContext).showSnackBar(
@@ -85,6 +70,130 @@ class CameraState extends State<Camera> {
         );
       }
     }
+  }
+
+  Future<void> _updateCameraOrientation(DeviceOrientation orientation) async {
+    if (_controller == null) return;
+
+    setState(() {
+      _currentOrientation = orientation;
+    });
+
+    try {
+      await _controller!.lockCaptureOrientation(orientation);
+      _previewSize = _controller!.value.previewSize;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+          SnackBar(content: Text('Error changing orientation: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _captureImage() async {
+    if (!(_controller?.value.isInitialized ?? false)) return;
+
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+          const SnackBar(content: Text('Camera permission is required')),
+        );
+      }
+      return;
+    }
+
+    try {
+      setState(() => _isProcessing = true);
+
+      // Set focus and exposure for best quality
+      await _controller!.setExposureMode(ExposureMode.auto);
+      await _controller!.setFocusMode(FocusMode.auto);
+
+      _photoOrientation = _currentOrientation;
+      _previewSize = _controller!.value.previewSize;
+
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String dirPath = '${appDir.path}/Pictures';
+      await Directory(dirPath).create(recursive: true);
+
+      // Use PNG extension for lossless quality
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.png';
+      final String tempImagePath = '$dirPath${Platform.pathSeparator}$fileName';
+
+      // Take picture with maximum quality
+      final XFile image = await _controller!.takePicture();
+
+      // Copy to new location as PNG
+      final File originalFile = File(image.path);
+      await originalFile.copy(tempImagePath);
+
+      setState(() {
+        _capturedImage = File(tempImagePath);
+        _isProcessing = false;
+        _isReviewing = true;
+      });
+    } catch (e) {
+      setState(() => _isProcessing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+          SnackBar(content: Text('Error capturing image: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildImagePreview() {
+    if (_capturedImage == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Center(
+      child: Container(
+        width: MediaQuery.of(context as BuildContext).size.width * 0.8,
+        height: MediaQuery.of(context as BuildContext).size.height * 0.70,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Transform.rotate(
+            angle: _getRotationAngle(),
+            child: Image.file(
+              _capturedImage!,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  double _getRotationAngle() {
+    switch (_photoOrientation) {
+      case DeviceOrientation.landscapeRight:
+        return -90 * 3.14159 / 180;
+      case DeviceOrientation.landscapeLeft:
+        return 90 * 3.14159 / 180;
+      case DeviceOrientation.portraitDown:
+        return 180 * 3.14159 / 180;
+      case DeviceOrientation.portraitUp:
+      default:
+        return 0.0;
+    }
+  }
+
+  void _rotateToNext() async {
+    final orientations = [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+    ];
+
+    final currentIndex = orientations.indexOf(_currentOrientation);
+    final nextOrientation =
+        orientations[(currentIndex + 1) % orientations.length];
+
+    await _updateCameraOrientation(nextOrientation);
   }
 
   void _toggleFlash() async {
@@ -144,56 +253,6 @@ class CameraState extends State<Camera> {
     super.dispose();
   }
 
-  Future<void> _captureImage() async {
-    if (!(_controller?.value.isInitialized ?? false)) return;
-
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-          const SnackBar(content: Text('Camera permission is required')),
-        );
-      }
-      return;
-    }
-
-    try {
-      setState(() => _isProcessing = true);
-
-      // Use the current orientation setting
-      final captureOrientation = _isPortrait
-          ? DeviceOrientation.portraitUp
-          : DeviceOrientation.landscapeRight;
-      await _controller!.lockCaptureOrientation(captureOrientation);
-
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String dirPath = '${appDir.path}/Pictures';
-      await Directory(dirPath).create(recursive: true);
-      final String tempImagePath =
-          join(dirPath, '${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      final XFile image = await _controller!.takePicture();
-      await image.saveTo(tempImagePath);
-
-      setState(() {
-        _capturedImage = File(tempImagePath);
-        _isProcessing = false;
-        _isReviewing = true;
-      });
-
-      // Reset to the current orientation setting
-      await _controller!.unlockCaptureOrientation();
-      await _controller!.lockCaptureOrientation(captureOrientation);
-    } catch (e) {
-      setState(() => _isProcessing = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-          SnackBar(content: Text('Error capturing image: $e')),
-        );
-      }
-    }
-  }
-
   Future<void> _uploadPhoto() async {
     if (_capturedImage == null || !_isReviewing) return;
 
@@ -207,9 +266,18 @@ class CameraState extends State<Camera> {
         widget.assessmentId,
       );
 
+      if (mounted) {
+        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+          SnackBar(content: Text('Successfully scanned paper!')),
+        );
+      }
+
       _resetCamera();
     } catch (e) {
       print('Error uploading image: $e');
+      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+        SnackBar(content: Text('Error scanning paper: $e')),
+      );
     } finally {
       setState(() {
         _isSaving = false;
@@ -320,13 +388,8 @@ class CameraState extends State<Camera> {
               onPressed: _toggleFlash,
             ),
             IconButton(
-              icon: Icon(
-                _isPortrait
-                    ? Icons.screen_rotation
-                    : Icons.stay_current_portrait,
-                color: Colors.black,
-              ),
-              onPressed: _toggleOrientation,
+              icon: const Icon(Icons.screen_rotation, color: Colors.black),
+              onPressed: _rotateToNext,
             ),
           ],
           IconButton(
@@ -361,9 +424,11 @@ class CameraState extends State<Camera> {
                           if (_isReviewing && _capturedImage != null)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                _capturedImage!,
-                                fit: BoxFit.cover,
+                              child: Transform.rotate(
+                                angle: _getRotationAngle(),
+                                child: Image.file(
+                                  _capturedImage!,
+                                ),
                               ),
                             )
                           else if (_controller?.value.isInitialized ?? false)
