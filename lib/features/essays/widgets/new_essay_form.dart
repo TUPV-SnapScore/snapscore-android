@@ -161,7 +161,10 @@ class _NewEssayFormState extends State<NewEssayForm> {
   }
 
   void removeRubricLevel(int criteriaIndex, int levelIndex) {
-    if (rubricLevels[criteriaIndex].length > 3) {
+    // Skip if there's initial data
+    if (widget.initialData?.id?.isNotEmpty == true) return;
+
+    if (rubricLevels[criteriaIndex].length > 1) {
       setState(() {
         final level = rubricLevels[criteriaIndex].removeAt(levelIndex);
         level.dispose();
@@ -208,7 +211,8 @@ class _NewEssayFormState extends State<NewEssayForm> {
                         rubricLevels[criteriaIndex][levelIndex].controller,
                   ),
                 ),
-                if (rubricLevels[criteriaIndex].length > 3)
+                if (rubricLevels[criteriaIndex].length > 1 &&
+                    widget.initialData?.id?.isNotEmpty != true)
                   IconButton(
                     icon: Icon(Icons.remove_circle_outline,
                         color: AppColors.error),
@@ -226,17 +230,19 @@ class _NewEssayFormState extends State<NewEssayForm> {
               onPressed: () => addRubricLevel(criteriaIndex),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Add Rubric Level',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+                children: widget.initialData?.id?.isNotEmpty == true
+                    ? []
+                    : [
+                        Icon(Icons.add, color: AppColors.textSecondary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Add Rubric Level',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
               ),
             ),
           ),
@@ -445,7 +451,8 @@ class _NewEssayFormState extends State<NewEssayForm> {
                           onChanged: (_) => updateTotalScore(),
                         ),
                       ),
-                      if (widget.initialData?.id?.isNotEmpty != true)
+                      if (criteriaControllers.length > 1 &&
+                          widget.initialData?.id?.isNotEmpty != true)
                         IconButton(
                           icon: Icon(
                             Icons.remove_circle_outline,

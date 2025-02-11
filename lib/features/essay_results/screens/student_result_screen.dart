@@ -3,9 +3,7 @@ import 'package:snapscore_android/features/essay_results/services/essay_results_
 import 'package:snapscore_android/features/identification_results/screens/student_paper_screen.dart';
 import '../../../core/themes/colors.dart';
 import '../models/essay_results_model.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:convert';
 
 class EssayStudentResultScreen extends StatefulWidget {
   final EssayResult result;
@@ -32,67 +30,114 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
     _selectedQuestion = widget.result.questionResults.first;
   }
 
+  // Calculate total score across all questions
+  int calculateTotalScore(List<EssayQuestionResult> questionResults) {
+    return questionResults.fold(0, (sum, question) {
+      return sum +
+          question.essayCriteriaResults
+              .fold(0, (criteriaSum, criteria) => criteriaSum + criteria.score);
+    });
+  }
+
   Future<void> _updateCriteriaScore(String criteriaId, double newScore) async {
     if (_isUpdating) return;
+
+    // Store old values for rollback if needed
+    final oldScore = widget.result.score;
+    final oldCriteriaScores = widget.result.questionResults
+        .map((q) => Map.fromEntries(
+            q.essayCriteriaResults.map((c) => MapEntry(c.id, c.score))))
+        .toList();
+
     setState(() => _isUpdating = true);
 
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/essay-results/criteria/$criteriaId'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'score': newScore}),
-      );
+      // First update the criteria score on the backend
+      await _essayService.updateCriteriaScore(criteriaId, newScore.toInt());
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to update criteria score');
-      }
+      // Create a new list of question results with the updated score
+      final updatedQuestionResults =
+          widget.result.questionResults.map((question) {
+        final updatedCriteriaResults =
+            question.essayCriteriaResults.map((criteria) {
+          if (criteria.id == criteriaId) {
+            return EssayCriteriaResult(
+              id: criteria.id,
+              score: newScore.toInt(),
+              criteriaId: criteria.criteriaId,
+              questionResultId: criteria.questionResultId,
+              criteria: criteria.criteria,
+              createdAt: criteria.createdAt,
+            );
+          }
+          return criteria;
+        }).toList();
 
-      // Update local state
+        return EssayQuestionResult(
+          id: question.id,
+          answer: question.answer,
+          resultId: question.resultId,
+          questionId: question.questionId,
+          score: question.score,
+          question: question.question,
+          essayCriteriaResults: updatedCriteriaResults,
+          createdAt: question.createdAt,
+        );
+      }).toList();
+
+      // Calculate new total score with updated criteria
+      final newTotalScore = calculateTotalScore(updatedQuestionResults);
+
+      // Update the total score on the backend
+      await _essayService.updateResult(widget.result.id, newTotalScore, null);
+
+      if (!mounted) return;
+
+      // Update both the criteria score and total score locally
       setState(() {
-        final criteriaIndex = _selectedQuestion.essayCriteriaResults
-            .indexWhere((criteria) => criteria.criteriaId == criteriaId);
-        if (criteriaIndex != -1) {
-          _selectedQuestion.essayCriteriaResults[criteriaIndex] =
-              EssayCriteriaResult(
-            id: criteriaId,
-            score: newScore.toInt(),
-            criteriaId: _selectedQuestion
-                .essayCriteriaResults[criteriaIndex].criteriaId,
-            questionResultId: _selectedQuestion
-                .essayCriteriaResults[criteriaIndex].questionResultId,
-          );
-        }
+        widget.result.questionResults = updatedQuestionResults;
+        widget.result.score = newTotalScore;
+        _selectedQuestion = updatedQuestionResults.firstWhere(
+          (q) => q.id == _selectedQuestion.id,
+        );
       });
     } catch (e) {
+      if (!mounted) return;
+
+      // Rollback to old values if there's an error
+      setState(() {
+        widget.result.score = oldScore;
+        for (var i = 0; i < widget.result.questionResults.length; i++) {
+          for (var criteria
+              in widget.result.questionResults[i].essayCriteriaResults) {
+            criteria = EssayCriteriaResult(
+              id: criteria.id,
+              score: oldCriteriaScores[i][criteria.id] ?? criteria.score,
+              criteriaId: criteria.criteriaId,
+              questionResultId: criteria.questionResultId,
+              criteria: criteria.criteria,
+              createdAt: criteria.createdAt,
+            );
+          }
+        }
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating score: $e')),
       );
     } finally {
+      if (!mounted) return;
       setState(() => _isUpdating = false);
     }
   }
 
-  Future<void> _deleteResult() async {
-    try {
-      final result = await _essayService.deleteEssayResult(widget.result.id);
-      if (result) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting result: $e')),
-      );
-    }
-  }
-
   Widget _buildCriteriaScoreField(EssayCriteriaResult criteria) {
+    final textEditingController = TextEditingController(
+      text: criteria.score.toString(),
+    );
+
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.black.withOpacity(0.1)),
-        borderRadius: BorderRadius.circular(8),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -130,14 +175,18 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   style: const TextStyle(color: Colors.grey),
-                  controller: TextEditingController(
-                    text: criteria.score.toString(),
-                  ),
+                  controller: textEditingController,
                   enabled: !_isUpdating,
                   onSubmitted: (value) {
                     final newScore = double.tryParse(value);
-                    if (newScore != null) {
+                    if (newScore != null &&
+                        newScore >= 0 &&
+                        newScore <=
+                            (criteria.criteria?.maxScore ?? double.infinity)) {
                       _updateCriteriaScore(criteria.id, newScore);
+                    } else {
+                      // Reset to original value if invalid input
+                      textEditingController.text = criteria.score.toString();
                     }
                   },
                   decoration: const InputDecoration(
@@ -152,6 +201,19 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteResult() async {
+    try {
+      final result = await _essayService.deleteEssayResult(widget.result.id);
+      if (result) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting result: $e')),
+      );
+    }
   }
 
   @override
@@ -215,7 +277,43 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                     // Student Section
                     _buildSectionHeader('Student', 'rubric_item'),
                     const SizedBox(height: 8),
-                    _buildInfoContainer(widget.result.studentName),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border:
+                            Border.all(color: Colors.black.withOpacity(0.1)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: TextEditingController(
+                            text: widget.result.studentName),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                        onSubmitted: (value) async {
+                          try {
+                            await _essayService.updateResult(
+                                widget.result.id, null, value);
+                            setState(() {
+                              widget.result.studentName = value;
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text('Error updating student name: $e')),
+                            );
+                          }
+                        },
+                      ),
+                    ),
                     const SizedBox(height: 24),
 
                     // Question Section

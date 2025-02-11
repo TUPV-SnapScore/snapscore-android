@@ -27,7 +27,31 @@ class EssayResultsService {
     }
   }
 
-  Future<void> updateCriteriaScore(String criteriaId, int newScore) async {
+  Future<bool> updateResult(
+      String resultId, int? newScore, String? name) async {
+    try {
+      final body = <String, dynamic>{};
+      if (newScore != null) body['score'] = newScore;
+      if (name != null) body['studentName'] = name;
+      print(body);
+
+      final response = await http.put(
+          Uri.parse('$baseUrl/essay-results/$resultId'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body));
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete result');
+      }
+
+      return true;
+    } catch (e) {
+      print("Error deleting result: $e");
+      throw Exception('Error deleting result: $e');
+    }
+  }
+
+  Future<int> updateCriteriaScore(String criteriaId, int newScore) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/essay-results/criteria/$criteriaId'),
@@ -38,6 +62,9 @@ class EssayResultsService {
       if (response.statusCode != 200) {
         throw Exception('Failed to update criteria score');
       }
+
+      final responseData = json.decode(response.body);
+      return responseData['score'] ?? newScore;
     } catch (e) {
       throw Exception('Error updating criteria score: $e');
     }

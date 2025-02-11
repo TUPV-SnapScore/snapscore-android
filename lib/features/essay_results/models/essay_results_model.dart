@@ -4,12 +4,12 @@ import 'package:snapscore_android/features/essays/models/essay_model.dart';
 
 class EssayResult {
   final String id;
-  final String studentName;
+  String studentName;
   final String assessmentId;
-  final List<EssayQuestionResult> questionResults;
+  List<EssayQuestionResult> questionResults;
   final String paperImage;
   final DateTime createdAt;
-  final int score;
+  int score;
 
   EssayResult({
     required this.id,

@@ -45,21 +45,6 @@ class EssayCameraState extends State<EssayCamera> {
     ]);
   }
 
-  void _rotateToNext() async {
-    final orientations = [
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.landscapeRight,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-    ];
-
-    final currentIndex = orientations.indexOf(_currentOrientation);
-    final nextOrientation =
-        orientations[(currentIndex + 1) % orientations.length];
-
-    await _updateCameraOrientation(nextOrientation);
-  }
-
   Future<void> _initializeCamera() async {
     final cameras = await availableCameras();
     if (cameras.isEmpty) return;
@@ -159,31 +144,55 @@ class EssayCameraState extends State<EssayCamera> {
   }
 
   Widget _buildImagePreview() {
-    if (_capturedImage == null) return Container();
-
-    // Calculate rotation based on the orientation when photo was taken
-    double rotation = 0.0;
-    switch (_photoOrientation) {
-      case DeviceOrientation.landscapeRight:
-        rotation = -90 * 3.14159 / 180;
-        break;
-      case DeviceOrientation.landscapeLeft:
-        rotation = 90 * 3.14159 / 180;
-        break;
-      case DeviceOrientation.portraitDown:
-        rotation = 180 * 3.14159 / 180;
-        break;
-      default:
-        rotation = 0.0;
+    if (_capturedImage == null) {
+      return const SizedBox.shrink();
     }
 
-    return Transform.rotate(
-      angle: rotation,
-      child: Image.file(
-        _capturedImage!,
-        fit: BoxFit.cover,
+    return Center(
+      child: Container(
+        width: MediaQuery.of(context as BuildContext).size.width * 0.8,
+        height: MediaQuery.of(context as BuildContext).size.height * 0.70,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Transform.rotate(
+            angle: _getRotationAngle(),
+            child: Image.file(
+              _capturedImage!,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  double _getRotationAngle() {
+    switch (_photoOrientation) {
+      case DeviceOrientation.landscapeRight:
+        return -90 * 3.14159 / 180;
+      case DeviceOrientation.landscapeLeft:
+        return 90 * 3.14159 / 180;
+      case DeviceOrientation.portraitDown:
+        return 180 * 3.14159 / 180;
+      case DeviceOrientation.portraitUp:
+      default:
+        return 0.0;
+    }
+  }
+
+  void _rotateToNext() async {
+    final orientations = [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+    ];
+
+    final currentIndex = orientations.indexOf(_currentOrientation);
+    final nextOrientation =
+        orientations[(currentIndex + 1) % orientations.length];
+
+    await _updateCameraOrientation(nextOrientation);
   }
 
   void _toggleFlash() async {
@@ -259,6 +268,9 @@ class EssayCameraState extends State<EssayCamera> {
       _resetCamera();
     } catch (e) {
       print('Error uploading image: $e');
+      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+        SnackBar(content: Text('Error scanning paper: $e')),
+      );
     } finally {
       setState(() {
         _isSaving = false;
@@ -405,7 +417,13 @@ class EssayCameraState extends State<EssayCamera> {
                           if (_isReviewing && _capturedImage != null)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: _buildImagePreview(),
+                              child: Transform.rotate(
+                                angle: _getRotationAngle(),
+                                child: Image.file(
+                                  _capturedImage!,
+                                  fit: BoxFit.fill, // Added this line
+                                ),
+                              ),
                             )
                           else if (_controller?.value.isInitialized ?? false)
                             ClipRRect(

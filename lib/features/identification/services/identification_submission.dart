@@ -25,31 +25,83 @@ class IdentificationService {
     }
   }
 
-  Future<Map<String, dynamic>> createAssessment(
-      {required String assessmentName,
-      required List<IdentificationAnswer> answers,
-      required String userId}) async {
+  Future<Map<String, dynamic>> _createIdentificationQuestion({
+    required String assessmentId,
+    required IdentificationAnswer answer,
+  }) async {
+    try {
+      final body = {
+        'assessmentId': assessmentId,
+        'correctAnswer': answer.answer,
+      };
+
+      print("added");
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/identification-questions'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final data = jsonDecode(response.body);
+        throw Exception('Failed to create question: ${data['message']}');
+      }
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': true, 'message': 'Failed to create question: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> createAssessment({
+    required String assessmentName,
+    required List<IdentificationAnswer> answers,
+    required String userId,
+  }) async {
     try {
       final body = {
         'name': assessmentName,
         'id': userId,
-        'questions':
-            answers.map((answer) => {'correctAnswer': answer.answer}).toList()
+        'questions': [],
       };
 
+      print(answers);
+
       final response = await http.post(
-          Uri.parse('$baseUrl/identification-assessment/user'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body));
+        Uri.parse('$baseUrl/identification-assessment/user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         final data = jsonDecode(response.body);
         throw Exception('Failed to create assessment: ${data['message']}');
       }
 
-      return jsonDecode(response.body);
+      final assessmentData = jsonDecode(response.body) as Map<String, dynamic>;
+      print(assessmentData);
+      final assessmentId = assessmentData['id'] as String?;
+
+      if (assessmentId == null) {
+        throw Exception('Assessment ID not found in response');
+      }
+
+      // Create questions one by one
+      for (var answer in answers) {
+        await _createIdentificationQuestion(
+          assessmentId: assessmentId,
+          answer: answer,
+        );
+      }
+
+      return assessmentData;
     } catch (e) {
-      return {'error': true, 'message': 'Failed to create assessment: $e'};
+      print('Error creating assessment: $e');
+      return {
+        'error': true,
+        'message': 'Failed to create assessment: $e',
+      };
     }
   }
 

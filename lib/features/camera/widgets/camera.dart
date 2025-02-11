@@ -266,12 +266,6 @@ class CameraState extends State<Camera> {
         widget.assessmentId,
       );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-          SnackBar(content: Text('Successfully scanned paper!')),
-        );
-      }
-
       _resetCamera();
     } catch (e) {
       print('Error uploading image: $e');
@@ -428,6 +422,7 @@ class CameraState extends State<Camera> {
                                 angle: _getRotationAngle(),
                                 child: Image.file(
                                   _capturedImage!,
+                                  fit: BoxFit.fill, // Added this line
                                 ),
                               ),
                             )

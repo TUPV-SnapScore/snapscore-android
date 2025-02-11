@@ -44,4 +44,24 @@ class StudentIdentificationResultService {
       throw Exception('Error deleting result: $e');
     }
   }
+
+  Future<bool> updateStudentName(String resultId, String name) async {
+    try {
+      final body = {'studentName': name};
+
+      final response = await http.put(
+          Uri.parse('$baseUrl/identification-results/$resultId'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body));
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete result');
+      }
+
+      return true;
+    } catch (e) {
+      print("Error deleting result: $e");
+      throw Exception('Error deleting result: $e');
+    }
+  }
 }

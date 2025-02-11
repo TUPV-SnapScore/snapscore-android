@@ -184,12 +184,28 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                     border: Border.all(color: Colors.black),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(
-                    widget.result.studentName,
+                  child: TextField(
+                    controller:
+                        TextEditingController(text: widget.result.studentName),
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 18,
                     ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                    onSubmitted: (value) async {
+                      try {
+                        await _service.updateStudentName(
+                            widget.result.id, value);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Error updating student name: $e')),
+                        );
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
