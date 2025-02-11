@@ -421,7 +421,8 @@ class EssayCameraState extends State<EssayCamera> {
                                 angle: _getRotationAngle(),
                                 child: Image.file(
                                   _capturedImage!,
-                                  fit: BoxFit.fill, // Added this line
+                                  alignment: Alignment.center,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             )

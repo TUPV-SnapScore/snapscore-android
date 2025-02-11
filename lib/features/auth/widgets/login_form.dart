@@ -103,10 +103,12 @@ class _LoginFormState extends State<LoginForm> {
         );
 
         authProvider.setUserId(userData['id']);
-
-        if (mounted) {
-          AuthWrapper.forceAuthenticatedRoute(context);
-        }
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const AssessmentScreen()),
+          (route) =>
+              false, // This predicate returning false removes all previous routes
+        );
       }
     } catch (e) {
       setState(() => _isLoading = false);

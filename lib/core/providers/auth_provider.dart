@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:snapscore_android/features/auth/helpers/api_service_helper.dart';
@@ -7,28 +9,35 @@ class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
   User? _user;
-  String? _userId; // MongoDB user ID
+  String? _userId;
   bool _isLoading = true;
+  StreamSubscription<User?>? _authSubscription;
 
   AuthProvider() {
     _initializeAuth();
   }
 
   Future<void> _initializeAuth() async {
-    _authService.authStateChanges.listen((User? user) async {
-      _user = user;
+    // Cancel any existing subscription first
+    await _authSubscription?.cancel();
+
+    _authSubscription =
+        _authService.authStateChanges.listen((User? user) async {
       _isLoading = true;
+      _user = user;
       notifyListeners();
 
       if (user != null) {
         try {
           final userData =
               await _apiService.getUserByFirebaseId(userId: user.uid);
-          setUserId(userData['id']);
+          _userId = userData['id'];
         } catch (e) {
           print('Error fetching user data: $e');
-          // If we can't get MongoDB user data, sign out
-          await signOut();
+          // Clear both Firebase and MongoDB user data on error
+          _user = null;
+          _userId = null;
+          await _authService.signOut();
         }
       } else {
         _userId = null;
@@ -54,16 +63,28 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
 
-    await _authService.signOut();
-    _user = null;
-    _userId = null;
+    try {
+      await _authService.signOut();
+      // Explicitly clear user data
+      _user = null;
+      _userId = null;
 
-    _isLoading = false;
-    notifyListeners();
+      // Force a refresh of the auth state
+      await _initializeAuth();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // Listen if user is null or user.uid is null then redirect to unauthenticatedRoute
@@ -100,7 +121,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   User? get user => _user;
-  String? get userId => _userId; // Getter for MongoDB user ID
+  String? get userId => _userId;
   bool get isLoading => _isLoading;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _user != null && _userId != null;
 }

@@ -422,7 +422,7 @@ class CameraState extends State<Camera> {
                                 angle: _getRotationAngle(),
                                 child: Image.file(
                                   _capturedImage!,
-                                  fit: BoxFit.fill, // Added this line
+                                  alignment: Alignment.center,
                                 ),
                               ),
                             )

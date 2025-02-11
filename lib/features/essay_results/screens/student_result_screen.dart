@@ -168,7 +168,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border.all(color: Colors.black.withOpacity(0.2)),
+                  border: Border.all(color: Colors.black),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: TextField(
@@ -282,8 +282,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border:
-                            Border.all(color: Colors.black.withOpacity(0.1)),
+                        border: Border.all(color: Colors.black),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TextField(
@@ -324,8 +323,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border:
-                            Border.all(color: Colors.black.withOpacity(0.1)),
+                        border: Border.all(color: Colors.black),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButton<EssayQuestionResult>(
@@ -376,8 +374,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                border: Border.all(
-                                    color: Colors.black.withOpacity(0.1)),
+                                border: Border.all(color: Colors.black),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -468,7 +465,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.black.withOpacity(0.1)),
+        border: Border.all(color: Colors.black),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
