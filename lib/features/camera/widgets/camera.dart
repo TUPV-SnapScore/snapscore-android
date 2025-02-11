@@ -423,6 +423,7 @@ class CameraState extends State<Camera> {
                                 child: Image.file(
                                   _capturedImage!,
                                   alignment: Alignment.center,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             )
