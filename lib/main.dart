@@ -30,12 +30,6 @@ class MyApp extends StatelessWidget {
         Provider<ApiService>(
           create: (_) => ApiService(),
         ),
-        Provider<AuthWrapper>(
-          create: (_) => AuthWrapper(
-            authenticatedRoute: const AssessmentScreen(),
-            unauthenticatedRoute: const SplashScreen(),
-          ),
-        ),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(

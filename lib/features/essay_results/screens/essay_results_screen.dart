@@ -6,11 +6,13 @@ import 'package:snapscore_android/features/essay_results/widgets/essay_results_l
 
 class EssayResultsScreen extends StatefulWidget {
   final String assessmentId;
+  final String essayTitle;
 
   const EssayResultsScreen({
-    Key? key,
+    super.key,
     required this.assessmentId,
-  }) : super(key: key);
+    required this.essayTitle,
+  });
 
   @override
   State<EssayResultsScreen> createState() => _EssayResultsScreenState();
@@ -30,6 +32,13 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
 
   Future<void> _loadResults() async {
     try {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      print("load called");
       final results = await _resultsService.getResultsByAssessmentId(
         widget.assessmentId,
       );
@@ -41,6 +50,7 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        print(e);
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading results: $e')),
@@ -59,10 +69,10 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'SnapScore',
-          style: TextStyle(
-            color: AppColors.textPrimary,
+        title: Text(
+          widget.essayTitle,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -71,6 +81,19 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 24.0, bottom: 4.0),
+            child: Center(
+              child: Text(
+                'SnapScore',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 54,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 4.0),
             child: Text(
@@ -86,6 +109,7 @@ class _EssayResultsScreenState extends State<EssayResultsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : StudentResultsList(
+                    onRefresh: _loadResults,
                     results: _results,
                     searchQuery: _searchQuery,
                     onSearch: (query) => setState(() => _searchQuery = query),

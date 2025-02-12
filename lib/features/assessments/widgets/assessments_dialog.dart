@@ -3,11 +3,10 @@ import 'package:snapscore_android/features/essays/screens/new_essay_screen.dart'
 import 'package:snapscore_android/features/identification/screens/identification_screen.dart';
 import '../../../core/themes/colors.dart';
 
-void showAssessmentTypeDialog(BuildContext context) {
-  showDialog(
+Future<bool> showAssessmentTypeDialog(BuildContext context) async {
+  final result = await showDialog<bool>(
     context: context,
-    barrierColor:
-        Colors.grey.withOpacity(0.2), // Semi-transparent dark background
+    barrierColor: Colors.grey.withOpacity(0.2),
     builder: (context) => Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -38,13 +37,19 @@ void showAssessmentTypeDialog(BuildContext context) {
                       _AssessmentTypeButton(
                         title: 'Identification',
                         iconPath: 'assets/images/assessment_test.png',
-                        onTap: () => {
-                          Navigator.pop(context),
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const NewIdentificationScreen()))
+                        onTap: () async {
+                          Navigator.pop(context); // Close dialog
+                          final result = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const NewIdentificationScreen(),
+                            ),
+                          );
+                          // Return true if a new assessment was created
+                          if (result == true) {
+                            Navigator.pop(context, true);
+                          }
                         },
                       ),
                       const SizedBox(
@@ -54,12 +59,18 @@ void showAssessmentTypeDialog(BuildContext context) {
                       _AssessmentTypeButton(
                         title: 'Essay',
                         iconPath: 'assets/images/assessment_essay.png',
-                        onTap: () => {
-                          Navigator.pop(context),
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const NewEssayScreen()))
+                        onTap: () async {
+                          Navigator.pop(context); // Close dialog
+                          final result = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NewEssayScreen(),
+                            ),
+                          );
+                          // Return true if a new assessment was created
+                          if (result == true) {
+                            Navigator.pop(context, true);
+                          }
                         },
                       ),
                     ],
@@ -72,6 +83,8 @@ void showAssessmentTypeDialog(BuildContext context) {
       ),
     ),
   );
+
+  return result ?? false;
 }
 
 class _AssessmentTypeButton extends StatelessWidget {

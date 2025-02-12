@@ -8,57 +8,100 @@ class IdentificationService {
 
   IdentificationService() : baseUrl = dotenv.get('API_URL');
 
-  Future<Map<String, dynamic>> _createIdentificationanswers(
-      {required IdentificationAnswer answer,
-      required String assessmentId}) async {
+  Future<bool> deleteAssessment(String assessmentId) async {
     try {
-      final response =
-          await http.post(Uri.parse('$baseUrl/identification-questions'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({
-                'question': answer.number.toString(),
-                'correctAnswer': answer.answer,
-                'assessmentId': assessmentId
-              }));
+      final response = await http.delete(
+        Uri.parse('$baseUrl/identification-assessment/$assessmentId'),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-      print(response.body);
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete assessment');
+      }
 
-      return jsonDecode(response.body);
+      return true;
     } catch (e) {
-      return {
-        'error': true,
-        'message': 'Failed creating identification answers'
-      };
+      throw Exception('Error deleting assessment: $e');
     }
   }
 
-  Future<Map<String, dynamic>> createAssessment(
-      {required String assessmentName,
-      required List<IdentificationAnswer> answers,
-      required String userId}) async {
+  Future<Map<String, dynamic>> _createIdentificationQuestion({
+    required String assessmentId,
+    required IdentificationAnswer answer,
+  }) async {
     try {
-      final response = await http.post(
-          Uri.parse('$baseUrl/identification-assessment'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'name': assessmentName, 'userId': userId}));
+      final body = {
+        'assessmentId': assessmentId,
+        'correctAnswer': answer.answer,
+      };
 
-      final data = jsonDecode(response.body);
+      print("added");
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/identification-questions'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('Failed to create assessment: ${data['message']}');
-      }
-
-      print(data);
-
-      final assessmentId = data['id'];
-      for (var answer in answers) {
-        await _createIdentificationanswers(
-            answer: answer, assessmentId: assessmentId);
+        final data = jsonDecode(response.body);
+        throw Exception('Failed to create question: ${data['message']}');
       }
 
       return jsonDecode(response.body);
     } catch (e) {
-      return {'error': true, 'message': 'Failed to create assessment: $e'};
+      return {'error': true, 'message': 'Failed to create question: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> createAssessment({
+    required String assessmentName,
+    required List<IdentificationAnswer> answers,
+    required String userId,
+  }) async {
+    try {
+      final body = {
+        'name': assessmentName,
+        'id': userId,
+        'questions': [],
+      };
+
+      print(answers);
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/identification-assessment/user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final data = jsonDecode(response.body);
+        throw Exception('Failed to create assessment: ${data['message']}');
+      }
+
+      final assessmentData = jsonDecode(response.body) as Map<String, dynamic>;
+      print(assessmentData);
+      final assessmentId = assessmentData['id'] as String?;
+
+      if (assessmentId == null) {
+        throw Exception('Assessment ID not found in response');
+      }
+
+      // Create questions one by one
+      for (var answer in answers) {
+        await _createIdentificationQuestion(
+          assessmentId: assessmentId,
+          answer: answer,
+        );
+      }
+
+      return assessmentData;
+    } catch (e) {
+      print('Error creating assessment: $e');
+      return {
+        'error': true,
+        'message': 'Failed to create assessment: $e',
+      };
     }
   }
 
@@ -68,9 +111,25 @@ class IdentificationService {
         Uri.parse('$baseUrl/identification-assessment/$assessmentId'),
         headers: {'Content-Type': 'application/json'},
       );
-      return jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          throw Exception('Empty response received');
+        }
+
+        final Map<String, dynamic> decodedData = json.decode(response.body);
+
+        // Ensure identificationQuestions is not null
+        if (decodedData['identificationQuestions'] == null) {
+          decodedData['identificationQuestions'] = [];
+        }
+
+        return decodedData;
+      } else {
+        throw Exception('Failed to load assessment: ${response.statusCode}');
+      }
     } catch (e) {
-      return {'error': true, 'message': 'Failed to fetch assessment: $e'};
+      throw Exception('Error fetching assessment: $e');
     }
   }
 

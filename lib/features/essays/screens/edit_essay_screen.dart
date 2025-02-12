@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
-import 'package:snapscore_android/features/camera/widgets/camera.dart';
+import 'package:snapscore_android/features/camera/widgets/essay_camera.dart';
 import 'package:snapscore_android/features/essay_results/screens/essay_results_screen.dart';
 import 'package:snapscore_android/features/essays/models/essay_model.dart';
 import 'package:snapscore_android/features/essays/services/essay_submission_service.dart';
@@ -32,47 +32,15 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
 
   Future<void> _loadEssayData() async {
     try {
-      final essayData = await _essayService.getEssay(widget.essayId);
-      print('Essay data: $essayData');
+      final response = await _essayService.getEssay(widget.essayId);
 
       if (mounted) {
-        // Extract questions with IDs
-        final questions = essayData['essayQuestions']
-            .asMap()
-            .entries
-            .map((entry) => EssayQuestion(
-                  questionNumber: entry.key + 1,
-                  questionText: entry.value['question'],
-                  id: entry.value['id'], // Store the original ID
-                ))
-            .toList();
-
-        // Get criteria with IDs
-        final criteria = essayData['essayQuestions'][0]['essayCriteria']
-            .asMap()
-            .entries
-            .map((entry) => EssayCriteria(
-                  criteriaNumber: entry.key + 1,
-                  criteriaText: entry.value['criteria'],
-                  maxScore: (entry.value['maxScore'] as num).toDouble(),
-                  id: entry.value['id'], // Store the original ID
-                ))
-            .toList();
-
         setState(() {
-          _initialData = EssayData(
-            essayTitle: essayData['name'],
-            questions: List<EssayQuestion>.from(questions),
-            criteria: List<EssayCriteria>.from(criteria),
-            totalScore: criteria
-                .map((c) => c.maxScore)
-                .fold(0.0, (sum, score) => sum + score),
-          );
+          _initialData = EssayData.fromJson(response);
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Error loading essay data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -86,9 +54,8 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
     try {
       final essayData = EssayData.fromJson(formData);
 
-      // Update essay title and total score if changed
-      if (_initialData!.essayTitle != essayData.essayTitle ||
-          _initialData!.totalScore != essayData.totalScore) {
+      // Update essay title
+      if (_initialData!.essayTitle != essayData.essayTitle) {
         await _essayService.updateEssay(
           essayId: widget.essayId,
           essayTitle: essayData.essayTitle,
@@ -100,30 +67,50 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         if (i < _initialData!.questions.length) {
           final questionId = _initialData!.questions[i].id;
           if (questionId != null &&
-              essayData.questions[i].questionText !=
-                  _initialData!.questions[i].questionText) {
+              essayData.questions[i].question !=
+                  _initialData!.questions[i].question) {
             await _essayService.updateQuestion(
               questionId: questionId,
-              questionText: essayData.questions[i].questionText,
+              questionText: essayData.questions[i].question,
             );
           }
         }
       }
 
-      // Update criteria
+      // Update criteria and their rubrics
       for (int i = 0; i < essayData.criteria.length; i++) {
         if (i < _initialData!.criteria.length) {
           final criteriaId = _initialData!.criteria[i].id;
           if (criteriaId != null &&
-              (essayData.criteria[i].criteriaText !=
-                      _initialData!.criteria[i].criteriaText ||
+              (essayData.criteria[i].criteria !=
+                      _initialData!.criteria[i].criteria ||
                   essayData.criteria[i].maxScore !=
                       _initialData!.criteria[i].maxScore)) {
             await _essayService.updateCriteria(
               criteriaId: criteriaId,
-              criteriaText: essayData.criteria[i].criteriaText,
-              maxScore: essayData.criteria[i].maxScore,
+              criteriaText: essayData.criteria[i].criteria,
+              maxScore: essayData.criteria[i].maxScore.toDouble(),
             );
+          }
+
+          // Update rubrics
+          for (int j = 0; j < essayData.criteria[i].rubrics.length; j++) {
+            if (j < _initialData!.criteria[i].rubrics.length) {
+              final rubricId = _initialData!.criteria[i].rubrics[j].id;
+              final newRubric = essayData.criteria[i].rubrics[j];
+
+              if (rubricId != null &&
+                  (newRubric.description !=
+                          _initialData!.criteria[i].rubrics[j].description ||
+                      newRubric.score !=
+                          _initialData!.criteria[i].rubrics[j].score)) {
+                await _essayService.updateRubric(
+                  rubricId: rubricId,
+                  description: newRubric.description,
+                  score: newRubric.score,
+                );
+              }
+            }
           }
         }
       }
@@ -132,13 +119,31 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Essay updated successfully')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e, stackTrace) {
       debugPrint('Error updating essay: $e\n$stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update essay: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAssessment() async {
+    try {
+      await _essayService.deleteEssay(widget.essayId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Essay deleted successfully')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete essay: ${e.toString()}')),
         );
       }
     }
@@ -152,22 +157,57 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
-          'Edit Essay',
+          'SnapScore',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.black, width: 1),
+            ),
+            color: Colors.white,
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                onTap: _deleteAssessment,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Delete Assessment',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                const Center(
+                  child: Text(
+                    'Essay',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: NewEssayForm(
                     controller: _formController,
@@ -194,12 +234,15 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                       _BottomButton(
                         imagePath: "assets/icons/assessment_scan.png",
                         label: 'Scan',
-                        onPressed: // TODO: Implement onPressed
-                            () => {
+                        onPressed: () => {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Camera())),
+                                  builder: (context) => EssayCamera(
+                                        assessmentId: widget.essayId,
+                                        assessmentName:
+                                            _initialData!.essayTitle,
+                                      ))),
                         },
                       ),
                       _BottomButton(
@@ -211,6 +254,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                             MaterialPageRoute(
                               builder: (context) => EssayResultsScreen(
                                 assessmentId: widget.essayId,
+                                essayTitle: _initialData!.essayTitle,
                               ),
                             ),
                           )
@@ -244,7 +288,8 @@ class _BottomButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            width: 100, // Fixed width for all buttons
+            padding: const EdgeInsets.symmetric(vertical: 1),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
@@ -254,12 +299,14 @@ class _BottomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
                   imagePath,
                   width: 24,
                   height: 24,
                 ),
+                const SizedBox(height: 4), // Consistent spacing
                 Text(
                   label,
                   style: const TextStyle(

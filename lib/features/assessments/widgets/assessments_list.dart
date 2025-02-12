@@ -11,16 +11,20 @@ class AssessmentSearchWidget extends StatefulWidget {
   const AssessmentSearchWidget({super.key});
 
   @override
-  State<AssessmentSearchWidget> createState() => _AssessmentSearchWidgetState();
+  State<AssessmentSearchWidget> createState() => AssessmentSearchWidgetState();
 }
 
-class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
+class AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
   final TextEditingController _searchController = TextEditingController();
   final AssessmentsService _assessmentsService = AssessmentsService();
 
   List<Map<String, dynamic>> _assessments = [];
   List<Map<String, dynamic>> _filteredAssessments = [];
   bool _isLoading = true;
+
+  void refreshAssessments() {
+    _loadAssessments();
+  }
 
   @override
   void initState() {
@@ -220,27 +224,37 @@ class _AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
                     iconPath: assessment['type'] == 'essay'
                         ? 'assets/images/assessment_essay.png'
                         : 'assets/images/assessment_test.png',
-                    onTap: () {
+                    onTap: () async {
                       if (assessment['type'] == 'essay') {
                         final essayAssessment =
                             assessment['data'] as EssayAssessment;
-                        Navigator.of(context).push(
+                        final pageResult =
+                            await Navigator.of(context).push<bool>(
                           MaterialPageRoute(
                             builder: (context) => EditEssayScreen(
                               essayId: essayAssessment.id,
                             ),
                           ),
                         );
+
+                        if (pageResult == true) {
+                          await _loadAssessments();
+                        }
                       } else {
                         final identificationAssessment =
                             assessment['data'] as IdentificationAssessment;
-                        Navigator.of(context).push(
+                        final pageResult =
+                            await Navigator.of(context).push<bool>(
                           MaterialPageRoute(
                             builder: (context) => EditIdentificationScreen(
                               assessmentId: identificationAssessment.id,
                             ),
                           ),
                         );
+
+                        if (pageResult == true) {
+                          await _loadAssessments();
+                        }
                       }
                     },
                   ),

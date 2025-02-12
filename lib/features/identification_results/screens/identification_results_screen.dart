@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snapscore_android/features/identification_results/screens/student_results_screen.dart';
 import 'package:snapscore_android/features/identification_results/services/identification_result_service.dart';
 import 'package:snapscore_android/features/identification_results/widgets/identification_results_list.dart';
 import '../../../core/themes/colors.dart';
@@ -9,10 +10,10 @@ class IdentificationResultsScreen extends StatefulWidget {
   final String assessmentName;
 
   const IdentificationResultsScreen({
-    Key? key,
+    super.key,
     required this.assessmentId,
     required this.assessmentName,
-  }) : super(key: key);
+  });
 
   @override
   State<IdentificationResultsScreen> createState() =>
@@ -32,7 +33,15 @@ class _IdentificationResultsScreenState
   }
 
   Future<void> _loadResults() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
+      print("load called");
+
       final results =
           await _service.getResultsByAssessmentId(widget.assessmentId);
       if (mounted) {
@@ -52,11 +61,6 @@ class _IdentificationResultsScreenState
     }
   }
 
-  void _handleStudentSelected(String resultId) {
-    // Navigate to detailed student result view
-    // TODO: Implement navigation to student detail screen
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,7 +74,7 @@ class _IdentificationResultsScreenState
         title: Text(
           widget.assessmentName,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: AppColors.textSecondary,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -80,12 +84,12 @@ class _IdentificationResultsScreenState
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
+            padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
             child: Text(
-              'Results',
+              'SnapScore',
               style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 20,
+                color: AppColors.textPrimary,
+                fontSize: 52,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -95,7 +99,22 @@ class _IdentificationResultsScreenState
                 ? const Center(child: CircularProgressIndicator())
                 : StudentResultsList(
                     results: _results,
-                    onStudentSelected: _handleStudentSelected,
+                    onStudentSelected: (String resultId) async {
+                      final result =
+                          _results.firstWhere((r) => r.id == resultId);
+                      final pageResult = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              StudentResultScreen(result: result),
+                        ),
+                      );
+
+                      if (pageResult == true) {
+                        _loadResults();
+                      }
+                    },
+                    onRefresh: _loadResults, // Add this line
                   ),
           ),
         ],

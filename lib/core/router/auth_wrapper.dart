@@ -12,21 +12,11 @@ class AuthWrapper extends StatelessWidget {
     required this.unauthenticatedRoute,
   });
 
-  static void forceAuthenticatedRoute(BuildContext context) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            Provider.of<AuthWrapper>(context, listen: false).authenticatedRoute,
-      ),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
+        // Show loading indicator while initial auth check is happening
         if (authProvider.isLoading) {
           return const Scaffold(
             body: Center(
@@ -35,9 +25,13 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        return authProvider.isAuthenticated
-            ? authenticatedRoute
-            : unauthenticatedRoute;
+        // Use isAuthenticated getter which checks both Firebase and MongoDB auth
+        if (authProvider.isAuthenticated) {
+          return authenticatedRoute;
+        }
+
+        // If not authenticated or any auth error, show login screen
+        return unauthenticatedRoute;
       },
     );
   }

@@ -22,9 +22,11 @@ class IdentificationResultsService {
 
       final List<dynamic> data = json.decode(response.body);
       print(data);
-      return data
-          .map((json) => IdentificationResultModel.fromJson(json))
-          .toList();
+      List<IdentificationResultModel> results =
+          data.map((json) => IdentificationResultModel.fromJson(json)).toList();
+
+      results.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      return results;
     } catch (e) {
       print("error here $e");
       throw Exception('Error fetching results: $e');

@@ -1,11 +1,11 @@
+// forgot_password_screen.dart
 import 'package:flutter/material.dart';
-import 'package:snapscore_android/features/auth/screens/forgot_password_screen.dart';
 import '../../../core/themes/colors.dart';
-import '../widgets/login_form.dart';
-import 'register_screen.dart';
+import '../widgets/forgot_password_form.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends StatelessWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +33,9 @@ class LoginScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Welcome Text
+                // Reset Password Text
                 Text(
-                  'Welcome back!',
+                  'Reset Password',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: 36,
                       ),
@@ -51,30 +51,30 @@ class LoginScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Login Form
-                const LoginForm(),
+                // Forgot Password Form
+                const ForgotPasswordForm(),
 
                 const SizedBox(height: 16),
 
-                // Don't have an account text
+                // Remember your password text
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Don\'t have an account? ',
+                      'Remember your password? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
+                            builder: (context) => const LoginScreen(),
                           ),
                         );
                       },
                       child: Text(
-                        'Sign Up',
+                        'Sign In',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.blue,
                               fontWeight: FontWeight.bold,
@@ -82,23 +82,6 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-
-                // Forgot Password
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ForgotPasswordScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Forgot password',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.blue, fontWeight: FontWeight.w700),
-                  ),
                 ),
 
                 const Spacer(),

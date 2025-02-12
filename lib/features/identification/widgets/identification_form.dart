@@ -27,7 +27,7 @@ class IdentificationForm extends StatefulWidget {
 
 class _IdentificationFormState extends State<IdentificationForm> {
   late int selectedQuestions;
-  final List<int> questionOptions = [10, 20, 30, 40, 50];
+  final List<int> questionOptions = [5, 10, 15, 20];
   final List<TextEditingController> answerControllers = [];
   final TextEditingController titleController = TextEditingController();
   final ScrollController _scrollController = ScrollController();

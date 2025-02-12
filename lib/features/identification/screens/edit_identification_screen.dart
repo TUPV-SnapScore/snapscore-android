@@ -40,15 +40,18 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
       print('Assessment data: $assessmentData');
 
       if (mounted) {
-        // Extract questions from the assessment data
-        final questions =
-            (assessmentData['identificationQuestions'] as List<dynamic>)
-                .map((q) => IdentificationAnswerWithId(
-                      id: q['id'],
-                      number: int.parse(q['question']),
-                      answer: q['correctAnswer'],
-                    ))
-                .toList();
+        // Extract questions from the assessment data with null safety
+        final questionsList =
+            assessmentData['identificationQuestions'] as List<dynamic>? ?? [];
+
+        final questions = questionsList.map((q) {
+          // Add null checks and default values
+          return IdentificationAnswerWithId(
+            id: q['id'] ?? '',
+            number: int.tryParse(q['question'] ?? '0') ?? 0,
+            answer: q['correctAnswer'] ?? '',
+          );
+        }).toList();
 
         // Sort questions by number to ensure correct order
         questions.sort((a, b) => a.number.compareTo(b.number));
@@ -56,7 +59,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
         setState(() {
           _initialData = IdentificationFormDataModel(
             assessmentId: widget.assessmentId,
-            name: assessmentData['name'],
+            name: assessmentData['name'] ?? '',
             answers: questions,
           );
           _isLoading = false;
@@ -74,7 +77,29 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load assessment data')),
+          SnackBar(
+            content: Text('Failed to load assessment data: ${e.toString()}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAssessment() async {
+    try {
+      await _identificationService.deleteAssessment(widget.assessmentId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Assessment deleted successfully')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      print('Error deleting assessment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete assessment')),
         );
       }
     }
@@ -110,7 +135,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Assessment updated successfully')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       print('Error updating assessment: $e');
@@ -130,7 +155,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
           'Edit Assessment',
@@ -140,6 +165,31 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.black, width: 1),
+            ),
+            color: Colors.white,
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                onTap: _deleteAssessment,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  title: Text(
+                    'Delete Assessment',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         centerTitle: true,
       ),
       body: _isLoading
@@ -176,7 +226,10 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Camera())),
+                                  builder: (context) => Camera(
+                                        assessmentId: widget.assessmentId,
+                                        assessmentName: _initialData!.name,
+                                      ))),
                         },
                       ),
                       _BottomButton(
@@ -188,7 +241,7 @@ class _EditIdentificationScreenState extends State<EditIdentificationScreen> {
                             MaterialPageRoute(
                               builder: (context) => IdentificationResultsScreen(
                                 assessmentId: widget.assessmentId,
-                                assessmentName: 'Sample Test',
+                                assessmentName: _initialData?.name ?? '',
                               ),
                             ),
                           )
@@ -222,7 +275,8 @@ class _BottomButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            width: 100, // Fixed width for all buttons
+            padding: const EdgeInsets.symmetric(vertical: 1),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
@@ -232,12 +286,14 @@ class _BottomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
                   imagePath,
                   width: 24,
                   height: 24,
                 ),
+                const SizedBox(height: 4), // Consistent spacing
                 Text(
                   label,
                   style: const TextStyle(

@@ -120,7 +120,7 @@ class _NewIdentificationScreenState extends State<NewIdentificationScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         centerTitle: true,
         title: const Text(

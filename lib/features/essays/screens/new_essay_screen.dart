@@ -49,12 +49,28 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
       final essayData = EssayData.fromJson(data);
       print(essayData.toJson());
 
+      // Transform the data to match the new service structure
+      final questions = essayData.questions
+          .map((question) => EssayQuestion(
+                question: question.question,
+                essayCriteria: essayData.criteria
+                    .map((criteria) => EssayCriteria(
+                          criteria: criteria.criteria,
+                          maxScore: criteria.maxScore,
+                          rubrics: criteria.rubrics,
+                        ))
+                    .toList(),
+              ))
+          .toList();
+
       final result = await _essayService.createEssay(
         essayTitle: essayData.essayTitle,
-        questions: essayData.questions,
-        criteria: essayData.criteria,
         userId: userId,
+        questions: questions,
       );
+
+      print(questions);
+      print(result);
 
       if (result['error'] == true) {
         throw Exception(result['message']);
@@ -123,9 +139,10 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
             child: Text(
               'Essay',
               style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700),
+                color: AppColors.textSecondary,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           Expanded(
@@ -151,20 +168,6 @@ class _NewEssayScreenState extends State<NewEssayScreen> {
                     imagePath: "assets/icons/assessment_save.png",
                     label: 'Save',
                     onPressed: _handleSave,
-                  ),
-                ),
-                Expanded(
-                  child: _BottomButton(
-                    imagePath: "assets/icons/assessment_scan.png",
-                    label: 'Scan',
-                    onPressed: () {},
-                  ),
-                ),
-                Expanded(
-                  child: _BottomButton(
-                    imagePath: "assets/icons/assessment_results.png",
-                    label: 'Results',
-                    onPressed: () {},
                   ),
                 ),
               ],
@@ -195,7 +198,8 @@ class _BottomButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 40),
+            width: 100, // Fixed width for all buttons
+            padding: const EdgeInsets.symmetric(vertical: 1),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
@@ -205,12 +209,14 @@ class _BottomButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
                   imagePath,
                   width: 24,
                   height: 24,
                 ),
+                const SizedBox(height: 4), // Consistent spacing
                 Text(
                   label,
                   style: const TextStyle(

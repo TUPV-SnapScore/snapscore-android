@@ -1,66 +1,148 @@
+import 'package:snapscore_android/features/assessments/models/assessment_model.dart';
+
 class EssayQuestion {
   final int questionNumber;
-  final String questionText;
-  final String id;
+  final String question;
+  final String? id;
+  final List<EssayCriteria> essayCriteria;
+  final String? assessmentId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   EssayQuestion({
-    required this.questionNumber,
-    required this.questionText,
-    required this.id,
-  });
+    this.questionNumber = 1,
+    required this.question,
+    this.id,
+    List<EssayCriteria>? essayCriteria,
+    this.assessmentId,
+    this.createdAt,
+    this.updatedAt,
+  }) : this.essayCriteria = essayCriteria ?? [];
 
   factory EssayQuestion.fromJson(Map<String, dynamic> json) {
     return EssayQuestion(
       questionNumber: json['questionNumber'] as int? ??
           (json['question_number'] as int?) ??
           1,
-      questionText:
-          json['questionText'] as String? ?? json['question'] as String,
-      id: json['id'] as String,
+      question: json['questionText'] as String? ?? json['question'] as String,
+      id: json['id'] as String?,
+      essayCriteria: (json['essayCriteria'] as List?)
+              ?.map((c) => EssayCriteria.fromJson(c))
+              .toList() ??
+          [],
+      assessmentId: json['assessmentId'] as String?,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'questionNumber': questionNumber,
-      'questionText': questionText,
-      'id': id,
+      'question': question,
+      'essayCriteria': essayCriteria.map((c) => c.toJson()).toList(),
     };
+
+    if (id != null) data['id'] = id;
+    if (assessmentId != null) data['assessmentId'] = assessmentId;
+    if (createdAt != null) data['createdAt'] = createdAt!.toIso8601String();
+    if (updatedAt != null) data['updatedAt'] = updatedAt!.toIso8601String();
+
+    return data;
   }
 }
 
 class EssayCriteria {
   final int criteriaNumber;
-  final String criteriaText;
-  final double maxScore;
-  final String id;
+  final String criteria;
+  final int maxScore;
+  final String? id;
+  final List<Rubric> rubrics;
+  final String? essayQuestionId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   EssayCriteria({
-    required this.criteriaNumber,
-    required this.criteriaText,
+    this.criteriaNumber = 1,
+    required this.criteria,
     required this.maxScore,
-    required this.id,
-  });
+    this.id,
+    List<Rubric>? rubrics,
+    this.essayQuestionId,
+    this.createdAt,
+    this.updatedAt,
+  }) : this.rubrics = rubrics ?? [];
 
   factory EssayCriteria.fromJson(Map<String, dynamic> json) {
     return EssayCriteria(
       criteriaNumber: json['criteriaNumber'] as int? ??
           (json['criteria_number'] as int?) ??
           1,
-      criteriaText:
-          json['criteriaText'] as String? ?? json['criteria'] as String,
-      maxScore: (json['maxScore'] as num).toDouble(),
-      id: json['id'] as String,
+      criteria: json['criteriaText'] as String? ?? json['criteria'] as String,
+      maxScore: (json['maxScore'] as num).toInt(),
+      id: json['id'] as String?,
+      rubrics:
+          (json['rubrics'] as List?)?.map((r) => Rubric.fromJson(r)).toList() ??
+              [],
+      essayQuestionId: json['essayQuestionId'] as String?,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'criteriaNumber': criteriaNumber,
-      'criteriaText': criteriaText,
+      'criteria': criteria,
       'maxScore': maxScore,
-      'id': id,
+      'rubrics': rubrics.map((r) => r.toJson()).toList(),
     };
+
+    if (id != null) data['id'] = id;
+    if (essayQuestionId != null) data['essayQuestionId'] = essayQuestionId;
+    if (createdAt != null) data['createdAt'] = createdAt!.toIso8601String();
+    if (updatedAt != null) data['updatedAt'] = updatedAt!.toIso8601String();
+
+    return data;
+  }
+}
+
+class Rubric {
+  final String? id;
+  final String score;
+  final String description;
+  final String? criteriaId;
+
+  Rubric({
+    this.id,
+    required this.score,
+    required this.description,
+    this.criteriaId,
+  });
+
+  factory Rubric.fromJson(Map<String, dynamic> json) {
+    return Rubric(
+      id: json['id'] as String?,
+      score: json['score'] as String,
+      description: json['description'] as String,
+      criteriaId: json['criteriaId'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {
+      'score': score,
+      'description': description,
+    };
+
+    if (id != null) data['id'] = id;
+    if (criteriaId != null) data['criteriaId'] = criteriaId;
+
+    return data;
   }
 }
 
@@ -69,12 +151,22 @@ class EssayData {
   final List<EssayQuestion> questions;
   final List<EssayCriteria> criteria;
   final double totalScore;
+  final String? id;
+  final String? userId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final List<EssayResult>? essayResults;
 
   EssayData({
     required this.essayTitle,
     required this.questions,
     required this.criteria,
-    required this.totalScore,
+    this.totalScore = 0.0,
+    this.id,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
+    this.essayResults,
   });
 
   factory EssayData.fromJson(Map<String, dynamic> json) {
@@ -85,74 +177,68 @@ class EssayData {
       return EssayData(
         essayTitle: json['essayTitle'] as String,
         questions: (json['questions'] as List)
-            .map((q) => EssayQuestion(
-                  questionNumber: q['questionNumber'] as int,
-                  questionText: q['questionText'] as String,
-                  id: q['id'] as String,
-                ))
+            .map((q) => EssayQuestion.fromJson(q))
             .toList(),
         criteria: (json['criteria'] as List)
-            .map((c) => EssayCriteria(
-                  criteriaNumber: c['criteriaNumber'] as int,
-                  criteriaText: c['criteriaText'] as String,
-                  maxScore: (c['maxScore'] as num).toDouble(),
-                  id: c['id'] as String,
-                ))
+            .map((c) => EssayCriteria.fromJson(c))
             .toList(),
-        totalScore: (json['totalScore'] as num).toDouble(),
+        totalScore: (json['totalScore'] as num?)?.toDouble() ?? 0.0,
       );
     }
 
     // Handle API response format
     return EssayData(
+      id: json['id'] as String?,
       essayTitle: json['name'] as String? ?? json['essayTitle'] as String,
       questions: (json['essayQuestions'] as List?)
-              ?.map((q) => EssayQuestion(
-                    questionNumber: q['questionNumber'] as int? ??
+              ?.map((q) => EssayQuestion.fromJson({
+                    ...q,
+                    'questionNumber': q['questionNumber'] as int? ??
                         ((json['essayQuestions'] as List).indexOf(q) + 1),
-                    questionText: q['question'] as String,
-                    id: q['id'] as String,
-                  ))
+                  }))
               .toList() ??
           [],
       criteria: (json['essayQuestions'] != null &&
               (json['essayQuestions'] as List).isNotEmpty &&
               json['essayQuestions'][0]['essayCriteria'] != null)
           ? (json['essayQuestions'][0]['essayCriteria'] as List)
-              .map((c) => EssayCriteria(
-                    criteriaNumber: c['criteriaNumber'] as int? ??
+              .map((c) => EssayCriteria.fromJson({
+                    ...c,
+                    'criteriaNumber': c['criteriaNumber'] as int? ??
                         ((json['essayQuestions'][0]['essayCriteria'] as List)
                                 .indexOf(c) +
                             1),
-                    criteriaText: c['criteria'] as String,
-                    maxScore: (c['maxScore'] as num).toDouble(),
-                    id: c['id'] as String,
-                  ))
+                  }))
               .toList()
           : [],
       totalScore: (json['totalScore'] as num?)?.toDouble() ?? 0.0,
+      userId: json['userId'] as String?,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      essayResults: (json['essayResults'] as List?)
+          ?.map((r) => EssayResult.fromJson(r))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'essayTitle': essayTitle,
-      'questions': questions
-          .map((q) => {
-                'questionNumber': q.questionNumber,
-                'questionText': q.questionText,
-                'id': q.id,
-              })
-          .toList(),
-      'criteria': criteria
-          .map((c) => {
-                'criteriaNumber': c.criteriaNumber,
-                'criteriaText': c.criteriaText,
-                'maxScore': c.maxScore,
-                'id': c.id,
-              })
-          .toList(),
+      'questions': questions.map((q) => q.toJson()).toList(),
+      'criteria': criteria.map((c) => c.toJson()).toList(),
       'totalScore': totalScore,
     };
+
+    if (id != null) data['id'] = id;
+    if (userId != null) data['userId'] = userId;
+    if (createdAt != null) data['createdAt'] = createdAt!.toIso8601String();
+    if (updatedAt != null) data['updatedAt'] = updatedAt!.toIso8601String();
+    if (essayResults != null) {
+      data['essayResults'] = essayResults!.map((r) => r.toJson()).toList();
+    }
+
+    return data;
   }
 }

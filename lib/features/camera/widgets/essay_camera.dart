@@ -8,18 +8,18 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:snapscore_android/core/themes/colors.dart';
 import 'package:snapscore_android/features/camera/services/camera_service.dart';
 
-class Camera extends StatefulWidget {
+class EssayCamera extends StatefulWidget {
   final String assessmentName;
   final String assessmentId;
 
-  const Camera(
+  const EssayCamera(
       {super.key, required this.assessmentName, required this.assessmentId});
 
   @override
-  CameraState createState() => CameraState();
+  EssayCameraState createState() => EssayCameraState();
 }
 
-class CameraState extends State<Camera> {
+class EssayCameraState extends State<EssayCamera> {
   CameraController? _controller;
   File? _capturedImage;
   bool _isProcessing = false;
@@ -233,7 +233,7 @@ class CameraState extends State<Camera> {
         _isSaving = true;
       });
 
-      await cameraService.uploadIdentificationImage(
+      await cameraService.uploadEssayImage(
         _capturedImage!,
         widget.assessmentId,
       );
