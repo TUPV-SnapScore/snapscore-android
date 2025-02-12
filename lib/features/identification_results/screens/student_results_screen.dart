@@ -76,6 +76,11 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         tapPosition.dx + 1,
         tapPosition.dy + 1,
       ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.black),
+      ),
+      color: Colors.white,
       items: [
         PopupMenuItem(
           child: ListTile(
@@ -126,6 +131,11 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         actions: [
           PopupMenuButton(
             icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.black),
+            ),
+            color: Colors.white,
             itemBuilder: (BuildContext context) => [
               PopupMenuItem(
                 onTap: _deleteResult,
@@ -135,7 +145,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
                     color: Colors.red,
                   ),
                   title: Text(
-                    'Delete Results',
+                    'Delete Result',
                     style: TextStyle(color: Colors.red),
                   ),
                 ),

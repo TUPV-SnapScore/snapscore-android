@@ -170,6 +170,11 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
         actions: [
           PopupMenuButton(
             icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.black, width: 1),
+            ),
+            color: Colors.white,
             itemBuilder: (BuildContext context) => [
               PopupMenuItem(
                 onTap: _deleteAssessment,

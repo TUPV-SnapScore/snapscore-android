@@ -15,35 +15,6 @@ void showSettingsPopup(BuildContext context, RelativeRect position) {
       PopupMenuItem(
         height: 40,
         padding: EdgeInsets.zero,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.settings,
-                size: 20,
-                color: Colors.black,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      PopupMenuItem(
-        height: 40,
-        padding: EdgeInsets.zero,
         onTap: () {
           showDialog(
             context: context,

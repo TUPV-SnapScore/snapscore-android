@@ -246,6 +246,11 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
         actions: [
           PopupMenuButton(
             icon: const Icon(Icons.more_horiz, color: AppColors.textPrimary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.black),
+            ),
+            color: Colors.white,
             itemBuilder: (BuildContext context) => [
               PopupMenuItem(
                 onTap: _deleteResult,
@@ -255,7 +260,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                     color: Colors.red,
                   ),
                   title: Text(
-                    'Delete Results',
+                    'Delete Result',
                     style: TextStyle(color: Colors.red),
                   ),
                 ),
@@ -415,7 +420,7 @@ class _EssayStudentResultScreenState extends State<EssayStudentResultScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Colors.black.withOpacity(0.1)),
+                      side: BorderSide(color: Colors.black),
                     ),
                   ),
                   onPressed: () {
