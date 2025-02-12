@@ -30,13 +30,13 @@ class EssayCameraState extends State<EssayCamera> {
 
   DeviceOrientation _currentOrientation = DeviceOrientation.portraitUp;
   DeviceOrientation? _photoOrientation;
-  Size? _previewSize;
+
+  double? _cameraAspectRatio;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
-    // Allow all orientations from the start
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -49,19 +49,17 @@ class EssayCameraState extends State<EssayCamera> {
     final cameras = await availableCameras();
     if (cameras.isEmpty) return;
 
-    _controller = CameraController(
-        cameras[0], ResolutionPreset.max, // Set to maximum resolution
-        enableAudio: false,
-        imageFormatGroup:
-            ImageFormatGroup.bgra8888 // Use highest quality format
-        );
+    _controller = CameraController(cameras[0], ResolutionPreset.high,
+        enableAudio: false, imageFormatGroup: ImageFormatGroup.jpeg);
 
     try {
       await _controller!.initialize();
       await _controller!.setFlashMode(FlashMode.off);
 
-      _previewSize = _controller!.value.previewSize;
-      setState(() {});
+      // Set aspect ratio after initialization
+      setState(() {
+        _cameraAspectRatio = _controller!.value.aspectRatio;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context as BuildContext).showSnackBar(
@@ -80,7 +78,6 @@ class EssayCameraState extends State<EssayCamera> {
 
     try {
       await _controller!.lockCaptureOrientation(orientation);
-      _previewSize = _controller!.value.previewSize;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context as BuildContext).showSnackBar(
@@ -111,7 +108,6 @@ class EssayCameraState extends State<EssayCamera> {
       await _controller!.setFocusMode(FocusMode.auto);
 
       _photoOrientation = _currentOrientation;
-      _previewSize = _controller!.value.previewSize;
 
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String dirPath = '${appDir.path}/Pictures';
@@ -141,29 +137,6 @@ class EssayCameraState extends State<EssayCamera> {
         );
       }
     }
-  }
-
-  Widget _buildImagePreview() {
-    if (_capturedImage == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Center(
-      child: Container(
-        width: MediaQuery.of(context as BuildContext).size.width * 0.8,
-        height: MediaQuery.of(context as BuildContext).size.height * 0.70,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Transform.rotate(
-            angle: _getRotationAngle(),
-            child: Image.file(
-              _capturedImage!,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   double _getRotationAngle() {
@@ -278,80 +251,147 @@ class EssayCameraState extends State<EssayCamera> {
     }
   }
 
-  // Future<void> _saveToGallery() async {
-  //   if (_capturedImage == null || !_isReviewing) return;
-
-  //   try {
-  //     setState(() => _isSaving = true);
-
-  //     if (Platform.isAndroid) {
-  //       // Request storage permissions
-  //       final storageStatus = await Permission.storage.request();
-  //       final mediaStatus = await Permission.photos.request();
-
-  //       if (!storageStatus.isGranted || !mediaStatus.isGranted) {
-  //         throw Exception('Storage permission is required');
-  //       }
-
-  //       // Get the external storage directory
-  //       final directory = await getExternalStorageDirectory();
-  //       if (directory == null) throw Exception('Could not access storage');
-
-  //       // Create a Pictures directory if it doesn't exist
-  //       final picturesDir = Directory('${directory.path}/Pictures/SnapScore');
-  //       if (!await picturesDir.exists()) {
-  //         await picturesDir.create(recursive: true);
-  //       }
-
-  //       // Create unique filename
-  //       final fileName =
-  //           'SnapScore_${DateTime.now().millisecondsSinceEpoch}.jpg';
-  //       final savedImage =
-  //           await _capturedImage!.copy('${picturesDir.path}/$fileName');
-
-  //       // Use platform channel to notify media scanner
-  //       await const MethodChannel('snapscore_channel').invokeMethod(
-  //         'scanFile',
-  //         {'path': savedImage.path},
-  //       );
-
-  //       if (mounted) {
-  //         ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-  //           const SnackBar(
-  //             content: Text('Image saved successfully!'),
-  //             duration: Duration(seconds: 2),
-  //           ),
-  //         );
-  //       }
-  //     } else if (Platform.isIOS) {
-  //       // For iOS, we'll need to implement PHPhotoLibrary saving
-  //       // This is a placeholder for iOS implementation
-  //       throw Exception('iOS implementation pending');
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-  //         SnackBar(
-  //           content: Text('Error saving image: $e'),
-  //           duration: const Duration(seconds: 2),
-  //         ),
-  //       );
-  //     }
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _isSaving = false);
-  //     }
-  //   }
-  // }
-
   Widget _buildCornerMarker() {
     return Container(
-      width: 20,
-      height: 20,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.green, width: 2),
-        color: Colors.transparent,
+      width: 24,
+      height: 24,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.green.withOpacity(0.8), width: 3),
+          color: Colors.transparent,
+        ),
       ),
+    );
+  }
+
+  Widget _buildCameraPreview() {
+    if (_controller?.value.isInitialized != true) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use full width of the screen
+        final width = constraints.maxWidth * 0.8;
+        // Calculate height for 16:9 aspect ratio
+        final height = width * 16 / 9;
+
+        return Center(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Camera preview
+              SizedBox(
+                width: width,
+                height: height,
+                child: CameraPreview(_controller!),
+              ),
+              // Paper guide overlay
+              SizedBox(
+                width: width * 0.85,
+                height: height * 0.85,
+                child: Stack(
+                  children: [
+                    // Top-left corner
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: _buildCornerMarker(),
+                    ),
+                    // Top-right corner
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Transform.rotate(
+                        angle: 90 * 3.14159 / 180,
+                        child: _buildCornerMarker(),
+                      ),
+                    ),
+                    // Bottom-left corner
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      child: Transform.rotate(
+                        angle: -90 * 3.14159 / 180,
+                        child: _buildCornerMarker(),
+                      ),
+                    ),
+                    // Bottom-right corner
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Transform.rotate(
+                        angle: 180 * 3.14159 / 180,
+                        child: _buildCornerMarker(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final imageWidth = screenWidth * 1.5;
+        final imageHeight =
+            imageWidth * 1.4; // Adjust this ratio based on your needs
+
+        return Stack(
+          children: [
+            Positioned(
+              top: 0,
+              bottom:
+                  40, // Adjust this value to position the image where you want vertically
+              left: (screenWidth - imageWidth) / 2, // Center horizontally
+              child: Container(
+                width: imageWidth,
+                height: imageHeight,
+                color: Colors.transparent,
+                child: Transform.rotate(
+                  angle: _getRotationAngle(),
+                  alignment: Alignment.center,
+                  child: ClipRect(
+                    child: Image.file(
+                      _capturedImage!,
+                      width: imageWidth,
+                      height: imageHeight,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: _resetCamera,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -394,7 +434,7 @@ class EssayCameraState extends State<EssayCamera> {
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.0),
+            padding: EdgeInsets.symmetric(vertical: 4.0),
             child: Text(
               'Scan',
               style: TextStyle(
@@ -407,90 +447,44 @@ class EssayCameraState extends State<EssayCamera> {
           Expanded(
             child: _isProcessing
                 ? const Center(child: CircularProgressIndicator())
-                : Center(
-                    child: Container(
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      height: MediaQuery.of(context).size.height * 0.70,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (_isReviewing && _capturedImage != null)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Transform.rotate(
-                                angle: _getRotationAngle(),
-                                child: Image.file(
-                                  _capturedImage!,
-                                  alignment: Alignment.center,
-                                  fit: BoxFit.contain,
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (_isReviewing && _capturedImage != null)
+                        _buildImagePreview()
+                      else if (_controller?.value.isInitialized ?? false)
+                        _buildCameraPreview(),
+                      if (!_isReviewing) ...[
+                        Positioned(
+                          bottom: 80,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: _captureImage,
+                              child: Container(
+                                width: 55,
+                                height: 55,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
                                 ),
-                              ),
-                            )
-                          else if (_controller?.value.isInitialized ?? false)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: CameraPreview(_controller!),
-                            ),
-                          if (!_isReviewing) ...[
-                            Positioned(
-                                top: 60, left: 20, child: _buildCornerMarker()),
-                            Positioned(
-                                top: 60,
-                                right: 20,
-                                child: _buildCornerMarker()),
-                            Positioned(
-                                bottom: 120,
-                                left: 20,
-                                child: _buildCornerMarker()),
-                            Positioned(
-                                bottom: 120,
-                                right: 20,
-                                child: _buildCornerMarker()),
-                            Positioned(
-                              bottom: 25,
-                              left: 0,
-                              right: 0,
-                              child: Center(
-                                child: GestureDetector(
-                                  onTap: _captureImage,
-                                  child: Container(
-                                    width: 55,
-                                    height: 55,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 3,
-                                      ),
-                                    ),
-                                    child: Container(
-                                      margin: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
+                                child: Container(
+                                  margin: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
                               ),
                             ),
-                          ],
-                          if (_isReviewing)
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                                onPressed: _resetCamera,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
           ),
           if (_isReviewing)
@@ -503,7 +497,7 @@ class EssayCameraState extends State<EssayCamera> {
                   backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(color: Colors.black12),
+                    side: const BorderSide(color: Colors.black),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   minimumSize: const Size(double.infinity, 48),
@@ -519,9 +513,9 @@ class EssayCameraState extends State<EssayCamera> {
                         ),
                       )
                     : const Text(
-                        'Save to Gallery',
+                        'Upload',
                         style: TextStyle(
-                          color: Colors.black54,
+                          color: AppColors.textSecondary,
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
