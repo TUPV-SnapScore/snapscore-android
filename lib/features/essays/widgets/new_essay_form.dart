@@ -25,7 +25,7 @@ class NewEssayForm extends StatefulWidget {
 
 class _NewEssayFormState extends State<NewEssayForm> {
   late int selectedQuestions;
-  final List<int> questionOptions = [1, 3, 5];
+  final List<int> questionOptions = [1];
   final List<TextEditingController> questionControllers = [];
   final List<TextEditingController> criteriaControllers = [];
   final List<TextEditingController> criteriaScoreControllers = [];
@@ -124,7 +124,6 @@ class _NewEssayFormState extends State<NewEssayForm> {
         criteriaScoreControllers
             .add(TextEditingController(text: criterion.maxScore.toString()));
 
-        // Initialize rubric levels from existing data
         List<RubricLevel> levels = criterion.rubrics
             .map((r) => RubricLevel(
                 initialScore: int.parse(r.score), description: r.description))
@@ -132,18 +131,108 @@ class _NewEssayFormState extends State<NewEssayForm> {
         rubricLevels.add(levels);
       }
     } else {
-      // Default initialization
-      selectedQuestions = questionOptions.first;
-      questionControllers.add(TextEditingController());
-      criteriaControllers.add(TextEditingController());
-      criteriaScoreControllers.add(TextEditingController());
+      // Default initialization with only 1 question
+      selectedQuestions = 1; // Set to 1 instead of questionOptions.first
+      questionControllers
+          .add(TextEditingController()); // Add only one question controller
 
-      // Initialize with 3 default rubric levels
-      rubricLevels.add([
-        RubricLevel(initialScore: 20, description: "Excellent performance"),
-        RubricLevel(initialScore: 15, description: "Good performance"),
-        RubricLevel(initialScore: 10, description: "Needs improvement"),
-      ]);
+      // Initialize with default criteria
+      final defaultCriteria = [
+        {
+          'name': 'Content',
+          'levels': [
+            RubricLevel(
+                initialScore: 1,
+                description: 'Lacks clear ideas; little to no development.'),
+            RubricLevel(
+                initialScore: 2,
+                description: 'Ideas are weak or unclear; minimal support.'),
+            RubricLevel(
+                initialScore: 3,
+                description:
+                    'Some ideas developed; moderate supporting details.'),
+            RubricLevel(
+                initialScore: 4,
+                description: 'Well-developed ideas with solid support.'),
+            RubricLevel(
+                initialScore: 5,
+                description:
+                    'Insightful, well-developed ideas with strong, compelling support.'),
+          ]
+        },
+        {
+          'name': 'Organization',
+          'levels': [
+            RubricLevel(
+                initialScore: 1,
+                description: 'No clear structure; ideas are scattered.'),
+            RubricLevel(
+                initialScore: 2,
+                description: 'Weak organization; difficult to follow.'),
+            RubricLevel(
+                initialScore: 3,
+                description: 'Some logical flow but inconsistent.'),
+            RubricLevel(
+                initialScore: 4,
+                description: 'Well-organized with smooth transitions.'),
+            RubricLevel(
+                initialScore: 5,
+                description:
+                    'Excellent structure; ideas flow logically and effectively.'),
+          ]
+        },
+        {
+          'name': 'Style',
+          'levels': [
+            RubricLevel(
+                initialScore: 1,
+                description:
+                    'Poor sentence structure; unclear or awkward phrasing.'),
+            RubricLevel(
+                initialScore: 2,
+                description:
+                    'Weak or inconsistent style; some awkward phrasing.'),
+            RubricLevel(
+                initialScore: 3,
+                description: 'Mostly clear, but occasional awkwardness.'),
+            RubricLevel(
+                initialScore: 4,
+                description: 'Clear and engaging writing with good variety.'),
+            RubricLevel(
+                initialScore: 5,
+                description: 'Polished, sophisticated, and engaging style.'),
+          ]
+        },
+        {
+          'name': 'Mechanics',
+          'levels': [
+            RubricLevel(
+                initialScore: 1,
+                description:
+                    'Frequent grammar, spelling, or punctuation errors.'),
+            RubricLevel(
+                initialScore: 2,
+                description: 'Many errors that disrupt readability.'),
+            RubricLevel(
+                initialScore: 3,
+                description:
+                    "Some errors, but they don't significantly impact understanding."),
+            RubricLevel(initialScore: 4, description: 'Few minor errors.'),
+            RubricLevel(
+                initialScore: 5,
+                description: 'Virtually error-free and highly polished.'),
+          ]
+        }
+      ];
+
+      // Initialize controllers and rubric levels for each criterion
+      for (var criterion in defaultCriteria) {
+        criteriaControllers
+            .add(TextEditingController(text: criterion['name'] as String));
+        criteriaScoreControllers.add(TextEditingController(
+            text: '5')); // Max score of 5 for each criterion
+        rubricLevels.add(criterion['levels'] as List<RubricLevel>);
+      }
     }
   }
 
