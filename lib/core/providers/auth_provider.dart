@@ -31,13 +31,13 @@ class AuthProvider extends ChangeNotifier {
         try {
           final userData =
               await _apiService.getUserByFirebaseId(userId: user.uid);
-          _userId = userData['id'];
+          if (userData.isNotEmpty) {
+            _userId = userData['id'];
+          } else {
+            print('User not found in DB, will create new record.');
+          }
         } catch (e) {
-          print('Error fetching user data: $e');
-          // Clear both Firebase and MongoDB user data on error
-          _user = null;
-          _userId = null;
-          await _authService.signOut();
+          print('Error fetching user data (non-critical): $e');
         }
       } else {
         _userId = null;

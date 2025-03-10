@@ -436,58 +436,58 @@ class _NewEssayFormState extends State<NewEssayForm> {
               controller: titleController,
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Image.asset(
-                  "assets/icons/rubric_item.png",
-                  width: 20,
-                  height: 20,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Pick Number of Questions:',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.black),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButton<int>(
-                      value: selectedQuestions,
-                      isExpanded: true,
-                      underline: const SizedBox(),
-                      items: questionOptions.map((int value) {
-                        return DropdownMenuItem<int>(
-                          value: value,
-                          child: Text(value.toString()),
-                        );
-                      }).toList(),
-                      onChanged: widget.initialData != null
-                          ? null
-                          : (int? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  selectedQuestions = newValue;
-                                  updateQuestionFields(newValue);
-                                });
-                              }
-                            },
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     Image.asset(
+            //       "assets/icons/rubric_item.png",
+            //       width: 20,
+            //       height: 20,
+            //       color: AppColors.textSecondary,
+            //     ),
+            //     const SizedBox(width: 8),
+            //     Expanded(
+            //       child: Text(
+            //         'Pick Number of Questions:',
+            //         style: TextStyle(
+            //           color: AppColors.textSecondary,
+            //           fontSize: 16,
+            //         ),
+            //       ),
+            //     ),
+            //     const SizedBox(width: 12),
+            //     Expanded(
+            //       child: Container(
+            //         padding: const EdgeInsets.symmetric(horizontal: 12),
+            //         decoration: BoxDecoration(
+            //           color: Colors.white,
+            //           border: Border.all(color: Colors.black),
+            //           borderRadius: BorderRadius.circular(8),
+            //         ),
+            //         child: DropdownButton<int>(
+            //           value: selectedQuestions,
+            //           isExpanded: true,
+            //           underline: const SizedBox(),
+            //           items: questionOptions.map((int value) {
+            //             return DropdownMenuItem<int>(
+            //               value: value,
+            //               child: Text(value.toString()),
+            //             );
+            //           }).toList(),
+            //           onChanged: widget.initialData != null
+            //               ? null
+            //               : (int? newValue) {
+            //                   if (newValue != null) {
+            //                     setState(() {
+            //                       selectedQuestions = newValue;
+            //                       updateQuestionFields(newValue);
+            //                     });
+            //                   }
+            //                 },
+            //         ),
+            //       ),
+            //     ),
+            //   ],
+            // ),
             const SizedBox(height: 20),
             _buildFormLabel('Essay Questions:'),
             ...List.generate(

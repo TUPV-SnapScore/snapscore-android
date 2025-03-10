@@ -55,9 +55,15 @@ class _RegisterFormState extends State<RegisterForm> {
       final userId =
           Provider.of<AuthProvider>(context, listen: false).user?.uid ?? '';
 
+      print("userId!!!!!!!!!!");
+      print(userId);
+
       if (userId.isEmpty) {
         throw Exception('Failed to get user ID');
       }
+
+      print("userId");
+      print(userId);
 
       // Make the API call
       final userData = await apiService.register(

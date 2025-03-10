@@ -13,6 +13,11 @@ class ApiService {
       required String userId,
       required String fullName}) async {
     try {
+      print("okay okay!");
+      print(email);
+      print(userId);
+      print(fullName);
+      print('Base URL: $baseUrl');
       final response = await http.post(
         Uri.parse('$baseUrl/users'),
         headers: {'Content-Type': 'application/json'},
@@ -22,6 +27,9 @@ class ApiService {
           'fullName': fullName,
         }),
       );
+
+      print(response);
+      print(response.statusCode);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         return jsonDecode(response.body);

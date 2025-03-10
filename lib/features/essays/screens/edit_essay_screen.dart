@@ -228,7 +228,7 @@ class _EditEssayScreenState extends State<EditEssayScreen> {
                     children: [
                       _BottomButton(
                         imagePath: "assets/icons/assessment_save.png",
-                        label: 'Update',
+                        label: 'Save',
                         onPressed: () => _formController.submitForm?.call(),
                       ),
                       _BottomButton(

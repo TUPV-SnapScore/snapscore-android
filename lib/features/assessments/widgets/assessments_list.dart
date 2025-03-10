@@ -222,8 +222,8 @@ class AssessmentSearchWidgetState extends State<AssessmentSearchWidget> {
                   child: _AssessmentListItem(
                     title: assessment['title'],
                     iconPath: assessment['type'] == 'essay'
-                        ? 'assets/images/assessment_essay.png'
-                        : 'assets/images/assessment_test.png',
+                        ? 'Essay'
+                        : 'Identification',
                     onTap: () async {
                       if (assessment['type'] == 'essay') {
                         final essayAssessment =
@@ -337,10 +337,13 @@ class _AssessmentListItem extends StatelessWidget {
           children: [
             Expanded(
               child: Center(
-                child: Image.asset(
+                child: Text(
                   iconPath,
-                  height: 128,
-                  width: 128,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
             ),

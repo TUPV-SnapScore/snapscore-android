@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -21,15 +23,16 @@ class EssayCamera extends StatefulWidget {
 
 class EssayCameraState extends State<EssayCamera> {
   CameraController? _controller;
-  File? _capturedImage;
+  List<File> _capturedImages = [];
+  File? _previewImage; // Currently displayed image in review mode
   bool _isProcessing = false;
   bool _isReviewing = false;
-  bool _isSaving = false;
+  bool _isUploading = false;
   FlashMode _currentFlashMode = FlashMode.off;
   final cameraService = CameraService();
 
   DeviceOrientation _currentOrientation = DeviceOrientation.portraitUp;
-  DeviceOrientation? _photoOrientation;
+  Map<File, DeviceOrientation> _photoOrientations = {};
 
   double? _cameraAspectRatio;
 
@@ -87,13 +90,13 @@ class EssayCameraState extends State<EssayCamera> {
     }
   }
 
-  Future<void> _captureImage() async {
+  Future<void> _captureImage(BuildContext context) async {
     if (!(_controller?.value.isInitialized ?? false)) return;
 
     final status = await Permission.camera.request();
     if (!status.isGranted) {
       if (mounted) {
-        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Camera permission is required')),
         );
       }
@@ -106,8 +109,6 @@ class EssayCameraState extends State<EssayCamera> {
       // Set focus and exposure for best quality
       await _controller!.setExposureMode(ExposureMode.auto);
       await _controller!.setFocusMode(FocusMode.auto);
-
-      _photoOrientation = _currentOrientation;
 
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String dirPath = '${appDir.path}/Pictures';
@@ -123,24 +124,28 @@ class EssayCameraState extends State<EssayCamera> {
       // Copy to new location as PNG
       final File originalFile = File(image.path);
       await originalFile.copy(tempImagePath);
+      
+      final File capturedImage = File(tempImagePath);
 
       setState(() {
-        _capturedImage = File(tempImagePath);
+        _capturedImages.add(capturedImage);
+        _photoOrientations[capturedImage] = _currentOrientation;
+        _previewImage = capturedImage;
         _isProcessing = false;
         _isReviewing = true;
       });
     } catch (e) {
       setState(() => _isProcessing = false);
       if (mounted) {
-        ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error capturing image: $e')),
         );
       }
     }
   }
 
-  double _getRotationAngle() {
-    switch (_photoOrientation) {
+  double _getRotationAngle(DeviceOrientation orientation) {
+    switch (orientation) {
       case DeviceOrientation.landscapeRight:
         return -90 * 3.14159 / 180;
       case DeviceOrientation.landscapeLeft:
@@ -206,10 +211,26 @@ class EssayCameraState extends State<EssayCamera> {
     }
   }
 
-  void _resetCamera() {
+  void _returnToCamera() {
     setState(() {
       _isReviewing = false;
-      _capturedImage = null;
+      _previewImage = null;
+    });
+  }
+  
+  void _removeImage(File image) {
+    setState(() {
+      _capturedImages.remove(image);
+      _photoOrientations.remove(image);
+      
+      if (_previewImage == image) {
+        if (_capturedImages.isNotEmpty) {
+          _previewImage = _capturedImages.last;
+        } else {
+          _previewImage = null;
+          _isReviewing = false;
+        }
+      }
     });
   }
 
@@ -225,28 +246,36 @@ class EssayCameraState extends State<EssayCamera> {
     super.dispose();
   }
 
-  Future<void> _uploadPhoto() async {
-    if (_capturedImage == null || !_isReviewing) return;
+  Future<void> _uploadPhotos(BuildContext context) async {
+    if (_capturedImages.isEmpty) return;
 
     try {
       setState(() {
-        _isSaving = true;
+        _isUploading = true;
       });
 
-      await cameraService.uploadEssayImage(
-        _capturedImage!,
-        widget.assessmentId,
-      );
+      // Upload each image one by one
+      for (final image in _capturedImages) {
+        await cameraService.uploadEssayImage(
+          image,
+          widget.assessmentId,
+        );
+      }
 
-      _resetCamera();
+      // Show success message and pop
+      if (mounted) {
+        Navigator.pop(context, 'Images uploaded successfully');
+      }
     } catch (e) {
-      print('Error uploading image: $e');
-      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
-        SnackBar(content: Text('Error scanning paper: $e')),
-      );
+      print('Error uploading images: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading images: $e')),
+        );
+      }
     } finally {
       setState(() {
-        _isSaving = false;
+        _isUploading = false;
       });
     }
   }
@@ -288,48 +317,6 @@ class EssayCameraState extends State<EssayCamera> {
                 height: height,
                 child: CameraPreview(_controller!),
               ),
-              // Paper guide overlay
-              SizedBox(
-                width: width * 0.85,
-                height: height * 0.85,
-                child: Stack(
-                  children: [
-                    // Top-left corner
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      child: _buildCornerMarker(),
-                    ),
-                    // Top-right corner
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Transform.rotate(
-                        angle: 90 * 3.14159 / 180,
-                        child: _buildCornerMarker(),
-                      ),
-                    ),
-                    // Bottom-left corner
-                    Positioned(
-                      left: 0,
-                      bottom: 0,
-                      child: Transform.rotate(
-                        angle: -90 * 3.14159 / 180,
-                        child: _buildCornerMarker(),
-                      ),
-                    ),
-                    // Bottom-right corner
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Transform.rotate(
-                        angle: 180 * 3.14159 / 180,
-                        child: _buildCornerMarker(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         );
@@ -338,30 +325,30 @@ class EssayCameraState extends State<EssayCamera> {
   }
 
   Widget _buildImagePreview() {
+    if (_previewImage == null) return Container();
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = MediaQuery.of(context).size.width;
         final imageWidth = screenWidth * 1.5;
-        final imageHeight =
-            imageWidth * 1.4; // Adjust this ratio based on your needs
+        final imageHeight = imageWidth * 1.4;
 
         return Stack(
           children: [
             Positioned(
               top: 0,
-              bottom:
-                  40, // Adjust this value to position the image where you want vertically
-              left: (screenWidth - imageWidth) / 2, // Center horizontally
+              bottom: 40,
+              left: (screenWidth - imageWidth) / 2,
               child: Container(
                 width: imageWidth,
                 height: imageHeight,
                 color: Colors.transparent,
                 child: Transform.rotate(
-                  angle: _getRotationAngle(),
+                  angle: _getRotationAngle(_photoOrientations[_previewImage]!),
                   alignment: Alignment.center,
                   child: ClipRect(
                     child: Image.file(
-                      _capturedImage!,
+                      _previewImage!,
                       width: imageWidth,
                       height: imageHeight,
                       fit: BoxFit.contain,
@@ -374,7 +361,7 @@ class EssayCameraState extends State<EssayCamera> {
               top: 10,
               right: 10,
               child: GestureDetector(
-                onTap: _resetCamera,
+                onTap: () => _removeImage(_previewImage!),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -382,7 +369,26 @@ class EssayCameraState extends State<EssayCamera> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.close,
+                    Icons.delete,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              left: 10,
+              child: GestureDetector(
+                onTap: _returnToCamera,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
                     color: Colors.white,
                     size: 24,
                   ),
@@ -392,6 +398,52 @@ class EssayCameraState extends State<EssayCamera> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildImageThumbnail(File image) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _previewImage = image;
+        });
+      },
+      child: Container(
+        width: 70,
+        height: 70,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          border: _previewImage == image
+              ? Border.all(color: Colors.blue, width: 2)
+              : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Transform.rotate(
+            angle: _getRotationAngle(_photoOrientations[image]!),
+            alignment: Alignment.center,
+            child: Image.file(
+              image,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnailList() {
+    return Container(
+      height: 80,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _capturedImages.length,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemBuilder: (context, index) {
+          return _buildImageThumbnail(_capturedImages[index]);
+        },
+      ),
     );
   }
 
@@ -415,7 +467,7 @@ class EssayCameraState extends State<EssayCamera> {
           ),
         ),
         actions: [
-          if (!_isReviewing) ...[
+          if (!_isReviewing || _previewImage == null) ...[
             IconButton(
               icon: Icon(_getFlashIcon(), color: Colors.black),
               onPressed: _toggleFlash,
@@ -450,18 +502,18 @@ class EssayCameraState extends State<EssayCamera> {
                 : Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (_isReviewing && _capturedImage != null)
+                      if (_isReviewing && _previewImage != null)
                         _buildImagePreview()
                       else if (_controller?.value.isInitialized ?? false)
                         _buildCameraPreview(),
-                      if (!_isReviewing) ...[
+                      if (!_isReviewing || _previewImage == null) ...[
                         Positioned(
                           bottom: 80,
                           left: 0,
                           right: 0,
                           child: Center(
                             child: GestureDetector(
-                              onTap: _captureImage,
+                              onTap: () => {_captureImage(context)},
                               child: Container(
                                 width: 55,
                                 height: 55,
@@ -487,12 +539,14 @@ class EssayCameraState extends State<EssayCamera> {
                     ],
                   ),
           ),
-          if (_isReviewing)
+          // Thumbnail list if we have images
+          if (_capturedImages.isNotEmpty) _buildThumbnailList(),
+          if (_capturedImages.isNotEmpty)
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: TextButton(
-                onPressed: _isSaving ? null : _uploadPhoto,
+                onPressed: _isUploading ? null : () => {_uploadPhotos(context)},
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
@@ -502,7 +556,7 @@ class EssayCameraState extends State<EssayCamera> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   minimumSize: const Size(double.infinity, 48),
                 ),
-                child: _isSaving
+                child: _isUploading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -513,7 +567,7 @@ class EssayCameraState extends State<EssayCamera> {
                         ),
                       )
                     : const Text(
-                        'Upload',
+                        'Upload All Images',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 14,
