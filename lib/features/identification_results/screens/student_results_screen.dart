@@ -38,6 +38,7 @@ class _StudentResultScreenState extends State<StudentResultScreen> {
         setState(() {
           questionResults[index] = QuestionResultModel(
             id: questionResults[index].id,
+            number: questionResults[index].number,
             answer: questionResults[index].answer,
             isCorrect: isCorrect,
             question: questionResults[index].question,
