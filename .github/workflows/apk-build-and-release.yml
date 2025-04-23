@@ -47,6 +47,18 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Create .env file
+        run: |
+          if [ -n "${{ secrets.API_URL }}" ]; then
+            echo "API_URL=${{ secrets.API_URL }}" > .env
+            echo ".env file created successfully"
+          else
+            echo "Warning: API_URL secret is not set. Creating a default .env file."
+            echo "API_URL=default_placeholder_value" > .env
+            # Uncomment if you want the build to fail when secret is missing
+            # exit 1
+          fi
+
       - name: Run tests
         run: flutter test
 
