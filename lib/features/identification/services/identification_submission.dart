@@ -27,11 +27,13 @@ class IdentificationService {
 
   Future<Map<String, dynamic>> _createIdentificationQuestion({
     required String assessmentId,
+    required int number,
     required IdentificationAnswer answer,
   }) async {
     try {
       final body = {
         'assessmentId': assessmentId,
+        'number': number,
         'correctAnswer': answer.answer,
       };
 
@@ -90,6 +92,7 @@ class IdentificationService {
       // Create questions one by one
       for (var answer in answers) {
         await _createIdentificationQuestion(
+          number: answer.number,
           assessmentId: assessmentId,
           answer: answer,
         );

@@ -48,12 +48,14 @@ class IdentificationResultModel {
 
 class QuestionResultModel {
   final String id;
+  final int number;
   final String answer;
   final bool isCorrect;
   final QuestionModel question;
 
   QuestionResultModel({
     required this.id,
+    required this.number,
     required this.answer,
     required this.isCorrect,
     required this.question,
@@ -63,6 +65,7 @@ class QuestionResultModel {
     try {
       return QuestionResultModel(
         id: json['id']?.toString() ?? '',
+        number: json['number'] as int? ?? 0, // Default to 0 if null
         answer: json['answer']?.toString() ?? '',
         isCorrect:
             json['isCorrect'] as bool? ?? false, // Default to false if null
@@ -79,11 +82,13 @@ class QuestionResultModel {
 
 class QuestionModel {
   final String id;
+  final int number; // Added this
   final String question;
   final String correctAnswer;
 
   QuestionModel({
     required this.id,
+    required this.number, // Added this
     required this.question,
     required this.correctAnswer,
   });
@@ -92,6 +97,7 @@ class QuestionModel {
     try {
       return QuestionModel(
         id: json['id']?.toString() ?? '',
+        number: json['number'] as int? ?? 0, // Default to 0 if null
         question: json['question']?.toString() ?? '',
         correctAnswer: json['correctAnswer']?.toString() ?? '',
       );
